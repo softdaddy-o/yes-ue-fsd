@@ -165,11 +165,73 @@ UMoveToLocationCommand* UMoveToLocationCommand::CreateMoveToLocationCommand(
 
 bool UMoveToLocationCommand::ExecuteNavigationMovement()
 {
-	// TODO: Implement navigation-based movement using AIController or NavigationSystem
-	// For now, fall back to direct movement
-	UE_LOG(LogTemp, Warning, TEXT("MoveToLocationCommand: Navigation movement not yet implemented, using direct movement"));
-	MovementMode = EAutoDriverMovementMode::Direct;
-	return ExecuteDirectMovement();
+	if (!PlayerController || !Character)
+	{
+		Result = FAutoDriverCommandResult(EAutoDriverCommandStatus::Failed, TEXT("No player controller or character"));
+		return false;
+	}
+
+	UWorld* World = PlayerController->GetWorld();
+	if (!World)
+	{
+		Result = FAutoDriverCommandResult(EAutoDriverCommandStatus::Failed, TEXT("No world"));
+		return false;
+	}
+
+	// Get or create AI controller for navigation
+	AAIController* AIController = nullptr;
+
+	// Check if character already has AI controller
+	AIController = Cast<AAIController>(Character->GetController());
+
+	if (!AIController)
+	{
+		// Try to create temporary AI controller
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = Character;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		AIController = World->SpawnActor<AAIController>(AAIController::StaticClass(), SpawnParams);
+		if (AIController)
+		{
+			// Temporarily possess for navigation
+			AController* OriginalController = Character->GetController();
+			AIController->Possess(Character);
+
+			UE_LOG(LogTemp, Log, TEXT("MoveToLocationCommand: Created temporary AI controller"));
+		}
+	}
+
+	if (!AIController)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("MoveToLocationCommand: Could not create AI controller, falling back to direct movement"));
+		MovementMode = EAutoDriverMovementMode::Direct;
+		return ExecuteDirectMovement();
+	}
+
+	// Use AI MoveTo for navigation
+	EPathFollowingRequestResult::Type MoveResult = AIController->MoveToLocation(
+		TargetLocation,
+		AcceptanceRadius,
+		true,  // Stop on overlap
+		true,  // Use pathfinding
+		false, // Allow partial path
+		true   // Project destination to navigation
+	);
+
+	if (MoveResult == EPathFollowingRequestResult::RequestSuccessful ||
+		MoveResult == EPathFollowingRequestResult::AlreadyAtGoal)
+	{
+		UE_LOG(LogTemp, Log, TEXT("MoveToLocationCommand: Navigation movement started"));
+		return true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("MoveToLocationCommand: Navigation failed (result: %d), falling back to direct movement"),
+			static_cast<int32>(MoveResult));
+		MovementMode = EAutoDriverMovementMode::Direct;
+		return ExecuteDirectMovement();
+	}
 }
 
 bool UMoveToLocationCommand::ExecuteDirectMovement()

@@ -5,6 +5,8 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Character.h"
 #include "AIController.h"
+#include "NavigationSystem.h"
+#include "NavigationPath.h"
 
 UAutoDriverComponent::UAutoDriverComponent()
 {
@@ -40,6 +42,7 @@ void UAutoDriverComponent::BeginPlay()
 void UAutoDriverComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	StopCurrentCommand();
+	ReleaseAIController();
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -267,6 +270,154 @@ void UAutoDriverComponent::OnCommandCompleted(const FAutoDriverCommandResult& Re
 
 AAIController* UAutoDriverComponent::GetOrCreateAIController()
 {
-	// TODO: Create or get AI controller for navigation-based movement
-	return nullptr;
+	if (!bUseAIControllerForNavigation)
+	{
+		return nullptr;
+	}
+
+	// Return cached controller if valid
+	if (CachedAIController && IsValid(CachedAIController))
+	{
+		return CachedAIController;
+	}
+
+	APawn* ControlledPawn = GetControlledPawn();
+	if (!ControlledPawn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AutoDriverComponent: Cannot create AI controller - no pawn"));
+		return nullptr;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return nullptr;
+	}
+
+	// Check if pawn already has an AI controller
+	if (AAIController* ExistingAI = Cast<AAIController>(ControlledPawn->GetController()))
+	{
+		CachedAIController = ExistingAI;
+		return ExistingAI;
+	}
+
+	// Create new AI controller
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = ControlledPawn;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	CachedAIController = World->SpawnActor<AAIController>(AAIController::StaticClass(), SpawnParams);
+	if (CachedAIController)
+	{
+		// Possess the pawn with AI controller
+		CachedAIController->Possess(ControlledPawn);
+
+		UE_LOG(LogTemp, Log, TEXT("AutoDriverComponent: Created AI controller for navigation"));
+	}
+
+	return CachedAIController;
+}
+
+void UAutoDriverComponent::ReleaseAIController()
+{
+	if (CachedAIController && IsValid(CachedAIController))
+	{
+		APawn* ControlledPawn = GetControlledPawn();
+		if (ControlledPawn && CachedPlayerController)
+		{
+			// Re-possess with original player controller
+			CachedPlayerController->Possess(ControlledPawn);
+		}
+
+		// Destroy AI controller
+		CachedAIController->Destroy();
+		CachedAIController = nullptr;
+
+		UE_LOG(LogTemp, Log, TEXT("AutoDriverComponent: Released AI controller"));
+	}
+}
+
+bool UAutoDriverComponent::IsLocationReachable(FVector TargetLocation)
+{
+	APawn* Pawn = GetControlledPawn();
+	if (!Pawn)
+	{
+		return false;
+	}
+
+	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	if (!NavSys)
+	{
+		return false;
+	}
+
+	FPathFindingQuery Query;
+	Query.StartLocation = Pawn->GetActorLocation();
+	Query.EndLocation = TargetLocation;
+	Query.NavData = NavSys->GetDefaultNavDataInstance();
+
+	if (!Query.NavData.IsValid())
+	{
+		return false;
+	}
+
+	FPathFindingResult Result = NavSys->FindPathSync(Query);
+	return Result.IsSuccessful() && Result.Path.IsValid();
+}
+
+float UAutoDriverComponent::GetPathLengthToLocation(FVector TargetLocation)
+{
+	APawn* Pawn = GetControlledPawn();
+	if (!Pawn)
+	{
+		return -1.0f;
+	}
+
+	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	if (!NavSys)
+	{
+		return -1.0f;
+	}
+
+	FPathFindingQuery Query;
+	Query.StartLocation = Pawn->GetActorLocation();
+	Query.EndLocation = TargetLocation;
+	Query.NavData = NavSys->GetDefaultNavDataInstance();
+
+	if (!Query.NavData.IsValid())
+	{
+		return -1.0f;
+	}
+
+	FPathFindingResult Result = NavSys->FindPathSync(Query);
+	if (Result.IsSuccessful() && Result.Path.IsValid())
+	{
+		return Result.Path->GetLength();
+	}
+
+	return -1.0f;
+}
+
+bool UAutoDriverComponent::GetRandomReachableLocation(float Radius, FVector& OutLocation)
+{
+	APawn* Pawn = GetControlledPawn();
+	if (!Pawn)
+	{
+		return false;
+	}
+
+	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	if (!NavSys)
+	{
+		return false;
+	}
+
+	FNavLocation NavLocation;
+	if (NavSys->GetRandomReachablePointInRadius(Pawn->GetActorLocation(), Radius, NavLocation))
+	{
+		OutLocation = NavLocation.Location;
+		return true;
+	}
+
+	return false;
 }

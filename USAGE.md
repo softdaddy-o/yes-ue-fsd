@@ -7,10 +7,11 @@ Comprehensive guide for using the Auto Player Driver plugin.
 1. [Getting Started](#getting-started)
 2. [AutoDriverComponent](#autodrivercomponent)
 3. [AutoDriverSubsystem](#autodriversubsystem)
-4. [Command System](#command-system)
-5. [Input Simulation](#input-simulation)
-6. [Common Patterns](#common-patterns)
-7. [Troubleshooting](#troubleshooting)
+4. [Navigation System](#navigation-system)
+5. [Command System](#command-system)
+6. [Input Simulation](#input-simulation)
+7. [Common Patterns](#common-patterns)
+8. [Troubleshooting](#troubleshooting)
 
 ## Getting Started
 
@@ -251,6 +252,127 @@ int32 ActiveCount = Subsystem->GetActiveAutoDriverCount();
 
 // Get total commands executed
 int64 TotalCommands = Subsystem->GetTotalCommandsExecuted();
+```
+
+## Navigation System
+
+The plugin integrates with Unreal Engine's Navigation System for AI-driven pathfinding.
+
+### Navigation-Based Movement
+
+When using `MovementMode::Navigation`, the plugin uses UE's navigation system to find paths around obstacles:
+
+```cpp
+FAutoDriverMoveParams Params;
+Params.TargetLocation = FVector(2000, 1000, 100);
+Params.AcceptanceRadius = 100.0f;
+Params.MovementMode = EAutoDriverMovementMode::Navigation;  // Use navigation pathfinding
+AutoDriver->MoveToLocation(Params);
+```
+
+**Movement Modes:**
+- `Direct` - Straight-line movement (ignores obstacles)
+- `Navigation` - AI pathfinding with obstacle avoidance
+- `InputSimulation` - Simulated player input
+
+### Navigation Queries
+
+The AutoDriverComponent provides convenient navigation queries:
+
+```cpp
+// Check if location is reachable
+FVector TargetLocation = FVector(2000, 1000, 100);
+if (AutoDriver->IsLocationReachable(TargetLocation))
+{
+    UE_LOG(LogTemp, Log, TEXT("Target is reachable!"));
+}
+
+// Get path length
+float PathLength = AutoDriver->GetPathLengthToLocation(TargetLocation);
+if (PathLength > 0.0f)
+{
+    UE_LOG(LogTemp, Log, TEXT("Path length: %.1f units"), PathLength);
+}
+
+// Find random location within radius
+FVector RandomLocation;
+if (AutoDriver->GetRandomReachableLocation(1000.0f, RandomLocation))
+{
+    // Move to random location
+    AutoDriver->MoveToActor(RandomLocation);
+}
+```
+
+### Navigation Helper
+
+For advanced navigation queries, use the `UNavigationHelper` utility class:
+
+```cpp
+#include "AutoDriver/NavigationHelper.h"
+
+// Check if location is on navmesh
+bool bOnNavMesh = UNavigationHelper::IsLocationOnNavMesh(this, TargetLocation);
+
+// Project location to navmesh
+FNavigationQueryResult Result = UNavigationHelper::ProjectLocationToNavMesh(this, TargetLocation);
+if (Result.bSuccess)
+{
+    FVector ProjectedLocation = Result.Location;
+}
+
+// Get random location in radius
+FNavigationQueryResult RandomResult = UNavigationHelper::GetRandomLocationInRadius(
+    this,
+    Origin,
+    1000.0f
+);
+
+// Debug visualization
+UNavigationHelper::DrawDebugPath(this, From, To, 5.0f, FLinearColor::Green);
+```
+
+### AI Controller Integration
+
+The plugin automatically creates a temporary AI controller for navigation-based movement. This is managed internally:
+
+```cpp
+// Enable/disable AI controller usage
+AutoDriver->bUseAIControllerForNavigation = true;  // Default: true
+```
+
+**How it works:**
+1. When using navigation mode, plugin creates temporary `AAIController`
+2. AI controller possesses the pawn for pathfinding
+3. Uses `AIController::MoveToLocation()` for navigation
+4. Original player controller is re-applied after navigation
+5. AI controller is cleaned up automatically
+
+### Navigation Requirements
+
+For navigation to work:
+
+1. **Navigation Mesh** - Your level must have a Nav Mesh Bounds Volume
+2. **NavMesh Build** - Press 'P' in editor to view navmesh
+3. **Character Movement** - Pawn must have `UCharacterMovementComponent`
+4. **AI Module** - Plugin depends on AIModule (automatically included)
+
+### Debugging Navigation
+
+```cpp
+// Enable debug visualization
+AutoDriver->bShowDebugInfo = true;
+
+// Draw navigation path
+UNavigationHelper::DrawDebugPath(
+    this,
+    Character->GetActorLocation(),
+    TargetLocation,
+    10.0f,  // Duration
+    FLinearColor::Green
+);
+
+// Visualize navmesh around a point
+UNavigationHelper::DrawDebugNavMesh(this, Location, 500.0f, 5.0f);
 ```
 
 ## Command System

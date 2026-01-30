@@ -144,6 +144,35 @@ public:
 	bool SetAxisValue(FName ActionName, float Value, float Duration = 0.0f);
 
 	// ========================================
+	// Navigation Queries
+	// ========================================
+
+	/**
+	 * Check if a location is reachable from current position
+	 * @param TargetLocation Target location to check
+	 * @return True if location is reachable
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|Navigation")
+	bool IsLocationReachable(FVector TargetLocation);
+
+	/**
+	 * Get path length to a target location
+	 * @param TargetLocation Target location
+	 * @return Path length in units, or -1 if path not found
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|Navigation")
+	float GetPathLengthToLocation(FVector TargetLocation);
+
+	/**
+	 * Find a random reachable location within radius
+	 * @param Radius Search radius
+	 * @param OutLocation Resulting random location
+	 * @return True if location found
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|Navigation")
+	bool GetRandomReachableLocation(float Radius, FVector& OutLocation);
+
+	// ========================================
 	// Utility
 	// ========================================
 
@@ -195,9 +224,20 @@ protected:
 	UPROPERTY()
 	APlayerController* CachedPlayerController;
 
+	/** Cached AI controller for navigation */
+	UPROPERTY()
+	AAIController* CachedAIController;
+
+	/** Use AI controller for navigation */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Auto Driver|Navigation")
+	bool bUseAIControllerForNavigation = true;
+
 	/** Command completion callback */
 	void OnCommandCompleted(const FAutoDriverCommandResult& Result);
 
 	/** Get or create AI controller for navigation */
 	AAIController* GetOrCreateAIController();
+
+	/** Release AI controller */
+	void ReleaseAIController();
 };
