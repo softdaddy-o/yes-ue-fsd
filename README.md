@@ -334,6 +334,7 @@ Yes UE FSD includes a comprehensive test suite ensuring reliability and stabilit
 - **Memory Leak Detection**: Lifecycle testing for all components
 - **Thread Safety Tests**: Concurrent access validation
 - **Python Integration Tests**: Full Python API coverage
+- **Visual Testing**: Screenshot capture and export for visual regression testing
 
 ### Running Tests
 
@@ -352,6 +353,8 @@ pytest tests/ -v --cov=. --cov-report=html
 ### Test Documentation
 
 - [Docs/Testing.md](Docs/Testing.md) - Complete testing guide
+- [Docs/ScreenshotCapture.md](Docs/ScreenshotCapture.md) - Screenshot capture and visual testing
+- [Docs/AutomatedTestingFeatures.md](Docs/AutomatedTestingFeatures.md) - Testing features research
 - [Docs/Troubleshooting.md](Docs/Troubleshooting.md) - Troubleshooting guide
 
 ## Example Content
@@ -371,6 +374,8 @@ The plugin includes comprehensive example content and tutorials:
 - [USAGE.md](USAGE.md) - Detailed usage guide
 - [API.md](API.md) - Complete API reference
 - [Docs/Testing.md](Docs/Testing.md) - Testing guide
+- [Docs/ScreenshotCapture.md](Docs/ScreenshotCapture.md) - Screenshot capture and visual testing
+- [Docs/AutomatedTestingFeatures.md](Docs/AutomatedTestingFeatures.md) - Automated testing research and features
 - [Docs/Troubleshooting.md](Docs/Troubleshooting.md) - Troubleshooting guide
 - [Docs/ExampleContent.md](Docs/ExampleContent.md) - Example content and tutorials
 - [Docs/Performance-Optimization.md](Docs/Performance-Optimization.md) - Performance optimization guide
