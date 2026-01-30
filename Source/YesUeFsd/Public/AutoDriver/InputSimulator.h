@@ -7,6 +7,7 @@
 #include "InputSimulator.generated.h"
 
 class APlayerController;
+class UEnhancedInputAdapter;
 
 /**
  * Input action type
@@ -25,14 +26,27 @@ enum class EInputActionType : uint8
 };
 
 /**
+ * Input mode for the simulator
+ */
+UENUM(BlueprintType)
+enum class EInputSimulatorMode : uint8
+{
+	/** Use legacy input system */
+	Legacy,
+
+	/** Use Enhanced Input System */
+	EnhancedInput,
+
+	/** Automatically detect and use available system */
+	Auto
+};
+
+/**
  * Input Simulator
  *
  * Simulates player input for automated control.
  * Supports keyboard, mouse, and gamepad input simulation.
- *
- * Note: This is a simplified implementation. For production use,
- * consider integrating with Enhanced Input System or implementing
- * a more robust input injection system.
+ * Integrates with both legacy input system and UE5's Enhanced Input System.
  */
 UCLASS(BlueprintType)
 class YESUEFSD_API UInputSimulator : public UObject
@@ -47,9 +61,10 @@ public:
 	/**
 	 * Initialize the input simulator
 	 * @param InPlayerController Player controller to simulate input for
+	 * @param Mode Input mode to use (Auto will detect available system)
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Input Simulator")
-	void Initialize(APlayerController* InPlayerController);
+	void Initialize(APlayerController* InPlayerController, EInputSimulatorMode Mode = EInputSimulatorMode::Auto);
 
 	// ========================================
 	// Button Input
@@ -164,6 +179,24 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Input Simulator")
 	bool IsInitialized() const { return PlayerController != nullptr; }
 
+	/**
+	 * Get current input mode
+	 */
+	UFUNCTION(BlueprintPure, Category = "Input Simulator")
+	EInputSimulatorMode GetInputMode() const { return CurrentMode; }
+
+	/**
+	 * Check if using Enhanced Input
+	 */
+	UFUNCTION(BlueprintPure, Category = "Input Simulator")
+	bool IsUsingEnhancedInput() const { return CurrentMode == EInputSimulatorMode::EnhancedInput; }
+
+	/**
+	 * Get Enhanced Input Adapter (if using Enhanced Input)
+	 */
+	UFUNCTION(BlueprintPure, Category = "Input Simulator")
+	UEnhancedInputAdapter* GetEnhancedInputAdapter() const { return EnhancedInputAdapter; }
+
 	// ========================================
 	// Factory
 	// ========================================
@@ -178,6 +211,14 @@ protected:
 	/** Player controller to simulate input for */
 	UPROPERTY()
 	TObjectPtr<APlayerController> PlayerController;
+
+	/** Enhanced Input Adapter (when using Enhanced Input mode) */
+	UPROPERTY()
+	TObjectPtr<UEnhancedInputAdapter> EnhancedInputAdapter;
+
+	/** Current input mode */
+	UPROPERTY()
+	EInputSimulatorMode CurrentMode = EInputSimulatorMode::Legacy;
 
 	/** Active button presses */
 	UPROPERTY()
@@ -204,4 +245,7 @@ protected:
 
 	/** Tick function */
 	void Tick(float DeltaTime);
+
+	/** Determine input mode to use */
+	EInputSimulatorMode DetermineInputMode(EInputSimulatorMode RequestedMode);
 };
