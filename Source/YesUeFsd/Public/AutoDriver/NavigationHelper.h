@@ -222,4 +222,20 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "Navigation Helper", meta = (WorldContext = "WorldContextObject"))
 	static bool IsNavigationSystemAvailable(UObject* WorldContextObject);
+
+	/**
+	 * Clear navigation query cache
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Navigation Helper")
+	static void ClearNavigationCache();
+
+	/**
+	 * Get navigation cache statistics
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Navigation Helper")
+	static void GetCacheStatistics(int32& OutHits, int32& OutMisses, int32& OutEntries);
+
+private:
+	/** Singleton navigation query cache */
+	static class FNavigationQueryCache& GetNavigationCache();
 };

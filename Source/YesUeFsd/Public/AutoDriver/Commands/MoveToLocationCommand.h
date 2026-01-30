@@ -8,6 +8,7 @@
 
 class APlayerController;
 class ACharacter;
+class AAIController;
 
 /**
  * Move To Location Command
@@ -85,6 +86,10 @@ protected:
 	/** Cached character */
 	UPROPERTY()
 	TObjectPtr<ACharacter> Character;
+
+	/** Cached AI controller (optional, for reuse) */
+	UPROPERTY()
+	TObjectPtr<AAIController> CachedAIController;
 
 	/** Is the command running */
 	bool bIsRunning = false;

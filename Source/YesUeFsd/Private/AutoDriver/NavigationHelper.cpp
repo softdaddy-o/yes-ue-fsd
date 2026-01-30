@@ -1,6 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "AutoDriver/NavigationHelper.h"
+#include "AutoDriver/NavigationCache.h"
+#include "AutoDriver/AutoDriverStats.h"
 #include "NavigationSystem.h"
 #include "NavigationPath.h"
 #include "DrawDebugHelpers.h"
@@ -12,9 +14,24 @@ bool UNavigationHelper::IsLocationReachable(
 	const FVector& To,
 	const FVector& QueryExtent)
 {
+	SCOPE_CYCLE_COUNTER(STAT_AutoDriver_NavigationQuery);
+
+	FNavigationQueryCache& Cache = GetNavigationCache();
+
+	// Check cache first
+	FNavigationQueryCache::FCacheEntry CachedEntry;
+	if (Cache.FindCachedPath(From, To, CachedEntry))
+	{
+		INC_DWORD_STAT(STAT_AutoDriver_NavCacheHits);
+		return CachedEntry.bIsValid;
+	}
+
+	INC_DWORD_STAT(STAT_AutoDriver_NavCacheMisses);
+
 	UNavigationSystemV1* NavSys = GetNavigationSystem(WorldContextObject);
 	if (!NavSys)
 	{
+		Cache.CachePath(From, To, nullptr, 0.0f);
 		return false;
 	}
 
@@ -26,11 +43,18 @@ bool UNavigationHelper::IsLocationReachable(
 
 	if (!Query.NavData.IsValid())
 	{
+		Cache.CachePath(From, To, nullptr, 0.0f);
 		return false;
 	}
 
 	FPathFindingResult Result = NavSys->FindPathSync(Query);
-	return Result.IsSuccessful() && Result.Path.IsValid();
+	bool bReachable = Result.IsSuccessful() && Result.Path.IsValid();
+
+	// Cache the result
+	float PathLength = bReachable ? Result.Path->GetLength() : 0.0f;
+	Cache.CachePath(From, To, bReachable ? Result.Path.Get() : nullptr, PathLength);
+
+	return bReachable;
 }
 
 bool UNavigationHelper::IsLocationOnNavMesh(
@@ -73,9 +97,31 @@ FNavigationQueryResult UNavigationHelper::GetPathLength(
 	const FVector& From,
 	const FVector& To)
 {
+	SCOPE_CYCLE_COUNTER(STAT_AutoDriver_NavigationQuery);
+
+	FNavigationQueryCache& Cache = GetNavigationCache();
+
+	// Check cache first
+	FNavigationQueryCache::FCacheEntry CachedEntry;
+	if (Cache.FindCachedPath(From, To, CachedEntry))
+	{
+		INC_DWORD_STAT(STAT_AutoDriver_NavCacheHits);
+		if (CachedEntry.bIsValid)
+		{
+			return FNavigationQueryResult::Success(To, CachedEntry.PathLength);
+		}
+		else
+		{
+			return FNavigationQueryResult::Failure(TEXT("Path not found (cached)"));
+		}
+	}
+
+	INC_DWORD_STAT(STAT_AutoDriver_NavCacheMisses);
+
 	UNavigationSystemV1* NavSys = GetNavigationSystem(WorldContextObject);
 	if (!NavSys)
 	{
+		Cache.CachePath(From, To, nullptr, 0.0f);
 		return FNavigationQueryResult::Failure(TEXT("Navigation system not available"));
 	}
 
@@ -86,6 +132,7 @@ FNavigationQueryResult UNavigationHelper::GetPathLength(
 
 	if (!Query.NavData.IsValid())
 	{
+		Cache.CachePath(From, To, nullptr, 0.0f);
 		return FNavigationQueryResult::Failure(TEXT("No navigation data"));
 	}
 
@@ -93,9 +140,11 @@ FNavigationQueryResult UNavigationHelper::GetPathLength(
 	if (Result.IsSuccessful() && Result.Path.IsValid())
 	{
 		float PathLength = Result.Path->GetLength();
+		Cache.CachePath(From, To, Result.Path.Get(), PathLength);
 		return FNavigationQueryResult::Success(To, PathLength);
 	}
 
+	Cache.CachePath(From, To, nullptr, 0.0f);
 	return FNavigationQueryResult::Failure(TEXT("Path not found"));
 }
 
@@ -247,4 +296,23 @@ UNavigationSystemV1* UNavigationHelper::GetNavigationSystem(UObject* WorldContex
 bool UNavigationHelper::IsNavigationSystemAvailable(UObject* WorldContextObject)
 {
 	return GetNavigationSystem(WorldContextObject) != nullptr;
+}
+
+void UNavigationHelper::ClearNavigationCache()
+{
+	GetNavigationCache().Clear();
+}
+
+void UNavigationHelper::GetCacheStatistics(int32& OutHits, int32& OutMisses, int32& OutEntries)
+{
+	GetNavigationCache().GetCacheStats(OutHits, OutMisses, OutEntries);
+
+	// Update stats counters
+	SET_DWORD_STAT(STAT_AutoDriver_NavCacheEntries, OutEntries);
+}
+
+FNavigationQueryCache& UNavigationHelper::GetNavigationCache()
+{
+	static FNavigationQueryCache Cache(128, 100.0f);
+	return Cache;
 }

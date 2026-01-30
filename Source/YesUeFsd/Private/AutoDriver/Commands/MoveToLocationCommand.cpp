@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "AutoDriver/Commands/MoveToLocationCommand.h"
+#include "AutoDriver/AutoDriverStats.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -26,6 +27,8 @@ void UMoveToLocationCommand::Initialize_Implementation(UObject* InContext)
 
 bool UMoveToLocationCommand::Execute_Implementation()
 {
+	SCOPE_CYCLE_COUNTER(STAT_AutoDriver_CommandExecution);
+
 	if (!PlayerController || !Character)
 	{
 		Result = FAutoDriverCommandResult(EAutoDriverCommandStatus::Failed, TEXT("Invalid controller or character"));
@@ -72,6 +75,8 @@ bool UMoveToLocationCommand::Execute_Implementation()
 
 void UMoveToLocationCommand::Tick_Implementation(float DeltaTime)
 {
+	SCOPE_CYCLE_COUNTER(STAT_AutoDriver_CommandTick);
+
 	if (!bIsRunning)
 	{
 		return;
@@ -184,6 +189,16 @@ bool UMoveToLocationCommand::ExecuteNavigationMovement()
 	// Check if character already has AI controller
 	AIController = Cast<AAIController>(Character->GetController());
 
+	// If no existing AI controller, try to reuse cached one
+	if (!AIController && CachedAIController && IsValid(CachedAIController))
+	{
+		AIController = CachedAIController;
+		AIController->Possess(Character);
+		INC_DWORD_STAT(STAT_AutoDriver_AIControllersReused);
+		UE_LOG(LogTemp, Log, TEXT("MoveToLocationCommand: Reusing cached AI controller"));
+	}
+
+	// Only create new controller if we don't have one cached
 	if (!AIController)
 	{
 		// Try to create temporary AI controller
@@ -194,11 +209,14 @@ bool UMoveToLocationCommand::ExecuteNavigationMovement()
 		AIController = World->SpawnActor<AAIController>(AAIController::StaticClass(), SpawnParams);
 		if (AIController)
 		{
+			// Cache for future use
+			CachedAIController = AIController;
+
 			// Temporarily possess for navigation
-			AController* OriginalController = Character->GetController();
 			AIController->Possess(Character);
 
-			UE_LOG(LogTemp, Log, TEXT("MoveToLocationCommand: Created temporary AI controller"));
+			INC_DWORD_STAT(STAT_AutoDriver_AIControllersCreated);
+			UE_LOG(LogTemp, Log, TEXT("MoveToLocationCommand: Created new AI controller (will be cached)"));
 		}
 	}
 
