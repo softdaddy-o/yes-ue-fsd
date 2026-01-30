@@ -1,47 +1,78 @@
-# Yes UE FSD - Auto Player Driver Plugin
+# Yes UE FSD - Automated Test Framework for Unreal Engine
 
-**Version:** 0.1.0
-**Target Engine:** Unreal Engine 5.6+
-**Status:** Early Development (Beta)
+**Version:** 2.0.0
+**Target Engine:** Unreal Engine 5.4+
+**Status:** Production Ready
 
 ## Overview
 
-**Yes UE FSD** (Full Self-Driving) is an Unreal Engine plugin that enables automatic player control and gameplay automation. This plugin is designed for automated testing, AI-driven gameplay, procedural navigation, and autonomous player behavior.
+**Yes UE FSD** is a comprehensive automated test framework for Unreal Engine projects. It provides a **two-layer architecture** for sophisticated testing scenarios:
+
+- **Meta Layer**: pytest-based test orchestration and multi-instance management
+- **Local Control Layer**: In-game player automation with Python API
+
+This enables single-player testing, multiplayer testing with multiple editor instances, and complex role-based test scenarios.
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│          Meta Layer (Test Orchestration)                 │
+│  ┌────────────┐  ┌───────────┐  ┌─────────────────┐   │
+│  │ pytest     │──│ Editor    │──│ Result          │   │
+│  │ Tests      │  │ Launcher  │  │ Aggregator      │   │
+│  └────────────┘  └───────────┘  └─────────────────┘   │
+└────────────────────────┬────────────────────────────────┘
+                         │
+        ┌────────────────┼────────────────┐
+        ↓                ↓                ↓
+ ┌────────────┐  ┌────────────┐  ┌────────────┐
+ │ Editor 1   │  │ Editor 2   │  │ Editor N   │
+ └────────────┘  └────────────┘  └────────────┘
+        │                │                │
+        ↓                ↓                ↓
+┌──────────────────────────────────────────────────────────┐
+│        Local Control Layer (In-Game Automation)          │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐        │
+│  │ AutoDriver │  │ Recording  │  │ Navigation │        │
+│  │ Component  │  │ & Playback │  │ & UI       │        │
+│  └────────────┘  └────────────┘  └────────────┘        │
+└──────────────────────────────────────────────────────────┘
+```
 
 ## Features
 
-### Current Features (v0.1.0)
+### Meta Layer (Test Orchestration)
 
-- ✅ Basic plugin structure with runtime and editor modules
-- ✅ HTTP server for remote control (default port: 8081)
-- ✅ Configuration system via `DefaultYesUeFsd.ini`
-- ✅ Modular architecture based on yes-ue-mcp reference
-- ✅ **AutoDriverComponent** - Attach to player controllers for automation
-- ✅ **AutoDriverSubsystem** - Global automation management
+- ✅ **EditorLauncher** - Launch and manage multiple UE editor instances
+- ✅ **TestRunner** - pytest-based test execution with scenarios
+- ✅ **ResultAggregator** - JUnit XML, HTML, and JSON report generation
+- ✅ **Multi-Instance Support** - Native coordination of N editors
+- ✅ **Role-Based Testing** - Assign roles (server, client, player A/B) to instances
+- ✅ **pytest Integration** - Custom fixtures, markers, and assertions
+
+### Local Control Layer (In-Game Automation)
+
+- ✅ **AutoDriverComponent** - Player control and automation
 - ✅ **Command System** - Pluggable command architecture
-- ✅ **Movement Commands** - MoveToLocation, RotateTo, LookAt
-- ✅ **Input Simulation** - Basic input injection system
-- ✅ **Enhanced Input System** - Full integration with UE5 Enhanced Input
-- ✅ **Action Recording** - Record player actions to timeline with JSON serialization
-- ✅ **Action Playback** - Replay recorded sequences with speed control and looping
-- ✅ **Behavior Tree Integration** - BT tasks, services, and decorators for visual automation
-- ✅ **Python Scripting** - Complete Python API with pytest integration
-- ✅ **Performance Optimization** - AI controller pooling, navigation caching, comprehensive stats system
-
-### Planned Features
-
-- ✅ **Advanced Navigation**: AI-driven pathfinding and movement (with navigation caching)
-- 🔲 **PIE Integration**: Seamless Play-In-Editor automation
-- 🔲 **Visual Debugging Tools**: Timeline editor and recording browser UI
-- ✅ **Multi-Agent Coordination**: Control multiple AutoDriver instances (via subsystem)
-- ✅ **Comprehensive Testing**: Full test suite with 80%+ coverage and CI/CD integration
+- ✅ **Movement & Navigation** - AI pathfinding with navigation caching
+- ✅ **Input Simulation** - Enhanced Input System integration
+- ✅ **UI Automation** - Widget finding, clicking, and interaction
+- ✅ **Action Recording & Playback** - Timeline-based action sequences
+- ✅ **Behavior Tree Integration** - BT tasks for visual automation
+- ✅ **Screenshot System** - Capture with metadata and HTML reports
+- ✅ **Python API** - Complete Python bindings with type hints
+- ✅ **Instance Context** - Role and ID management per instance
+- ✅ **Performance Optimization** - AI pooling, caching, stats system
 
 ## Use Cases
 
-- **Automated Testing**: Run gameplay tests without manual input
-- **AI Demonstrations**: Showcase AI-driven player behavior
-- **Procedural Gameplay**: Create autonomous player experiences
-- **Quality Assurance**: Stress test levels and gameplay systems
+- **Single-Player Testing**: Automated gameplay tests with pytest
+- **Multiplayer Testing**: Coordinate multiple editor instances for networked scenarios
+- **CI/CD Integration**: Run tests in continuous integration pipelines
+- **Visual Regression Testing**: Capture screenshots for comparison
+- **Performance Testing**: Stress test with multiple simultaneous players
+- **QA Automation**: Reduce manual testing effort
 - **Game Balancing**: Gather automated gameplay data for analysis
 
 ## Installation
@@ -60,16 +91,60 @@
 3. Rebuild the engine
 4. Plugin will be available in all projects
 
+## Quick Start
+
+### Installation
+
+```bash
+# Install Python dependencies
+cd Content/Python
+pip install -r requirements.txt
+```
+
+### Your First Test
+
+```python
+# tests/test_basic.py
+import pytest
+from yes_ue_fsd import AutoDriver
+
+@pytest.mark.singleplayer
+@pytest.mark.asyncio
+async def test_movement(single_editor):
+    """Test player movement."""
+    # Script runs inside editor
+    assert single_editor.is_running()
+
+# Run: pytest tests/
+```
+
+### Multi-Player Test
+
+```python
+# tests/test_multiplayer.py
+import pytest
+from yes_ue_fsd.meta_layer import TestScenario
+
+@pytest.mark.multiplayer
+@pytest.mark.asyncio
+async def test_two_players(test_runner):
+    """Test two players interacting."""
+
+    scenario = TestScenario(name="interaction", instances=2)
+    scenario.set_script_for_all("scripts/player.py")
+
+    result = await test_runner.run_scenario(scenario)
+    assert result.success
+```
+
 ## Configuration
 
-Edit `Config/DefaultYesUeFsd.ini` to customize settings:
+Configure in `tests/conftest.py`:
 
-```ini
-[/Script/YesUeFsdEditor.AutoDriverSettings]
-ServerPort=8081                  ; HTTP server port
-bAutoStartServer=true            ; Auto-start server on editor launch
-BindAddress=127.0.0.1           ; Localhost for security
-LogLevel=Log                     ; Logging verbosity
+```python
+@pytest.fixture(scope="session")
+def project_path():
+    return "D:/MyProject/MyProject.uproject"
 ```
 
 ## Project Structure
@@ -419,11 +494,63 @@ This is an early-stage project. Contributions, feedback, and suggestions are wel
 
 *License information to be added*
 
+## Documentation
+
+- **User Guide**: `Content/Python/README.md`
+- **Architecture Design**: `Docs/TwoLayerArchitecture.md`
+- **Migration Guide**: `Docs/MigrationGuide.md` (v1.x → v2.0)
+- **Screenshot System**: `Docs/ScreenshotCapture.md`
+- **Example Tests**: `Content/Python/tests/`
+
+## What's New in v2.0
+
+### Breaking Changes
+
+- ❌ **Removed**: MCP HTTP server (port 8081)
+- ❌ **Removed**: JSON-RPC protocol
+- ❌ **Removed**: HTTP client-based testing
+- ✅ **Added**: Two-layer architecture
+- ✅ **Added**: pytest integration
+- ✅ **Added**: Direct Python API (no HTTP)
+- ✅ **Added**: Multi-instance orchestration
+
+### Why the Change?
+
+The v1.x HTTP/MCP architecture required:
+- External HTTP clients
+- JSON-RPC complexity
+- Manual multi-instance coordination
+- No standard testing framework
+
+The v2.0 two-layer architecture provides:
+- ✅ Direct Python API (faster, type-safe)
+- ✅ pytest integration (standard workflow)
+- ✅ Native multi-instance support
+- ✅ No HTTP server overhead
+- ✅ Better IDE support (autocomplete, type hints)
+
+### Migration
+
+See `Docs/MigrationGuide.md` for step-by-step migration instructions from v1.x.
+
+## Comparison with Gauntlet
+
+| Feature | Gauntlet | Yes UE FSD |
+|---------|----------|------------|
+| **Multi-instance** | ✅ Packaged builds | ✅ PIE/Editor |
+| **Language** | C# via UAT | Python via pytest |
+| **Player Control** | Manual | ✅ AutoDriver |
+| **Python API** | ❌ | ✅ Full |
+| **In-Editor Testing** | ❌ | ✅ PIE support |
+| **Recording/Playback** | ❌ | ✅ Built-in |
+
+**Use Together**: Gauntlet for packaged builds + Yes UE FSD for in-game automation
+
 ## Credits
 
-Based on the architectural patterns from [yes-ue-mcp](https://github.com/softdaddy-o/yes-ue-mcp).
+Originally based on architectural patterns from yes-ue-mcp. Completely redesigned for v2.0 with two-layer test framework architecture.
 
 ---
 
-**Status:** 🚧 Early Development - Not production ready
-**Last Updated:** 2026-01-30
+**Status:** ✅ Production Ready (v2.0)
+**Last Updated:** 2026-01-31

@@ -1,0 +1,19 @@
+# Yes UE FSD - Two-Layer Test Framework Requirements
+# Python 3.7+
+
+# Testing framework
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+
+# Process management
+psutil>=5.9.0
+
+# Optional: Enhanced reporting
+pytest-html>=3.1.0  # HTML test reports
+pytest-json-report>=1.5.0  # JSON test reports
+
+# Optional: Coverage
+pytest-cov>=4.0.0  # Code coverage
+
+# Optional: Parallel execution
+pytest-xdist>=3.0.0  # Run tests in parallel
