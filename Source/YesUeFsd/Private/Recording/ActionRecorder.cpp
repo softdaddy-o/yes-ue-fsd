@@ -219,6 +219,36 @@ void UActionRecorder::RecordCustomAction(const FString& ActionType, const FStrin
 	OnActionRecorded.Broadcast(Action);
 }
 
+void UActionRecorder::RecordUIClickAction(const FString& WidgetName, const FUIClickParams& ClickParams)
+{
+	if (!IsRecording() || !CurrentTimeline)
+	{
+		return;
+	}
+
+	// Convert ClickParams to JSON string
+	FString ClickTypeStr;
+	switch (ClickParams.ClickType)
+	{
+		case EUIClickType::Left:
+			ClickTypeStr = TEXT("Left");
+			break;
+		case EUIClickType::Right:
+			ClickTypeStr = TEXT("Right");
+			break;
+		case EUIClickType::Middle:
+			ClickTypeStr = TEXT("Middle");
+			break;
+	}
+
+	FString ActionData = FString::Printf(TEXT("{\"ClickType\":\"%s\",\"ClickCount\":%d}"),
+		*ClickTypeStr, ClickParams.ClickCount);
+
+	FRecordedAction Action(RecordingTime, TEXT("UIClick"), WidgetName, ActionData);
+	CurrentTimeline->AddAction(Action);
+	OnActionRecorded.Broadcast(Action);
+}
+
 void UActionRecorder::InitializeReferences()
 {
 	AActor* Owner = GetOwner();

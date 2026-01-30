@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "Recording/ActionTimeline.h"
 #include "AutoDriver/AutoDriverTypes.h"
+#include "AutoDriver/AutoDriverUITypes.h"
 #include "ActionRecorder.generated.h"
 
 class UAutoDriverComponent;
@@ -132,6 +133,10 @@ public:
 	/** Manually record a custom action */
 	UFUNCTION(BlueprintCallable, Category = "Action Recorder")
 	void RecordCustomAction(const FString& ActionType, const FString& ActionName, const FString& ActionData);
+
+	/** Manually record a UI click action */
+	UFUNCTION(BlueprintCallable, Category = "Action Recorder")
+	void RecordUIClickAction(const FString& WidgetName, const FUIClickParams& ClickParams);
 
 	// Events
 

@@ -94,6 +94,48 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Python|AutoDriver")
 	static void StopCurrentCommand(int32 PlayerIndex = 0);
 
+	// UI Commands
+
+	/** Click a widget by name */
+	UFUNCTION(BlueprintCallable, Category = "Python|AutoDriver|UI")
+	static bool ClickWidget(const FString& WidgetName, int32 PlayerIndex = 0);
+
+	/** Click a widget with specific parameters */
+	UFUNCTION(BlueprintCallable, Category = "Python|AutoDriver|UI")
+	static bool ClickWidgetWithParams(const FString& WidgetName, const FString& ClickType, int32 ClickCount, int32 PlayerIndex = 0);
+
+	/** Wait for a widget to appear */
+	UFUNCTION(BlueprintCallable, Category = "Python|AutoDriver|UI")
+	static bool WaitForWidget(const FString& WidgetName, float Timeout, int32 PlayerIndex = 0);
+
+	/** Wait for a widget to disappear */
+	UFUNCTION(BlueprintCallable, Category = "Python|AutoDriver|UI")
+	static bool WaitForWidgetGone(const FString& WidgetName, float Timeout, int32 PlayerIndex = 0);
+
+	/** Find a widget by name and return JSON info */
+	UFUNCTION(BlueprintCallable, Category = "Python|AutoDriver|UI")
+	static FString FindWidgetByName(const FString& WidgetName, int32 PlayerIndex = 0);
+
+	/** Find widgets by query and return JSON array */
+	UFUNCTION(BlueprintCallable, Category = "Python|AutoDriver|UI")
+	static FString FindWidgets(const FString& QueryJson, int32 PlayerIndex = 0);
+
+	/** Get text content from a widget */
+	UFUNCTION(BlueprintCallable, Category = "Python|AutoDriver|UI")
+	static FString GetWidgetText(const FString& WidgetName, int32 PlayerIndex = 0);
+
+	/** Check if a widget is visible */
+	UFUNCTION(BlueprintCallable, Category = "Python|AutoDriver|UI")
+	static bool IsWidgetVisible(const FString& WidgetName, int32 PlayerIndex = 0);
+
+	/** Get all buttons and return JSON array */
+	UFUNCTION(BlueprintCallable, Category = "Python|AutoDriver|UI")
+	static FString GetAllButtons(int32 PlayerIndex = 0);
+
+	/** Click at screen position */
+	UFUNCTION(BlueprintCallable, Category = "Python|AutoDriver|UI")
+	static bool ClickAtPosition(float X, float Y, int32 PlayerIndex = 0);
+
 	// Recording & Playback
 
 	/** Create a new action recorder */

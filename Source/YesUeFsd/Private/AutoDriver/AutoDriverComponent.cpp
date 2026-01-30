@@ -2,6 +2,8 @@
 
 #include "AutoDriver/AutoDriverComponent.h"
 #include "AutoDriver/Commands/IAutoDriverCommand.h"
+#include "AutoDriver/WidgetQueryHelper.h"
+#include "AutoDriver/UIInteractionHelper.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Character.h"
 #include "AIController.h"
@@ -420,4 +422,201 @@ bool UAutoDriverComponent::GetRandomReachableLocation(float Radius, FVector& Out
 	}
 
 	return false;
+}
+
+// ========================================
+// UI Methods
+// ========================================
+
+bool UAutoDriverComponent::ClickWidget(const FString& WidgetName, const FUIClickParams& ClickParams)
+{
+	if (!bEnabled)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AutoDriverComponent: Cannot click widget - component is disabled"));
+		return false;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return false;
+	}
+
+	return UUIInteractionHelper::ClickWidgetByName(World, WidgetName, ClickParams);
+}
+
+bool UAutoDriverComponent::ClickWidgetByQuery(const FWidgetQueryParams& QueryParams, const FUIClickParams& ClickParams)
+{
+	if (!bEnabled)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AutoDriverComponent: Cannot click widget - component is disabled"));
+		return false;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return false;
+	}
+
+	// Find the widget
+	FWidgetInfo WidgetInfo = UWidgetQueryHelper::FindWidget(World, QueryParams);
+	if (!WidgetInfo.IsValid())
+	{
+		return false;
+	}
+
+	// Find the actual widget pointer
+	UWidget* Widget = UWidgetQueryHelper::FindWidgetByPredicate(World, [QueryParams](UWidget* W)
+	{
+		if (!W)
+		{
+			return false;
+		}
+
+		switch (QueryParams.QueryType)
+		{
+			case EWidgetQueryType::ByName:
+				return W->GetName().Equals(QueryParams.Name);
+			case EWidgetQueryType::ByClass:
+				return W->GetClass()->GetName().Contains(QueryParams.ClassName);
+			case EWidgetQueryType::ByText:
+			{
+				FString WidgetText = UWidgetQueryHelper::GetWidgetText(W);
+				return WidgetText.Contains(QueryParams.Text);
+			}
+			default:
+				return false;
+		}
+	});
+
+	if (!Widget)
+	{
+		return false;
+	}
+
+	return UUIInteractionHelper::ClickWidget(World, Widget, ClickParams);
+}
+
+bool UAutoDriverComponent::WaitForWidget(const FString& WidgetName, float Timeout)
+{
+	if (!bEnabled)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AutoDriverComponent: Cannot wait for widget - component is disabled"));
+		return false;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return false;
+	}
+
+	// Simple polling implementation
+	float ElapsedTime = 0.0f;
+	const float PollInterval = 0.1f;
+
+	while (ElapsedTime < Timeout)
+	{
+		FWidgetInfo Info = UWidgetQueryHelper::FindWidgetByName(World, WidgetName);
+		if (Info.IsValid())
+		{
+			return true;
+		}
+
+		FPlatformProcess::Sleep(PollInterval);
+		ElapsedTime += PollInterval;
+	}
+
+	return false;
+}
+
+bool UAutoDriverComponent::WaitForWidgetToDisappear(const FString& WidgetName, float Timeout)
+{
+	if (!bEnabled)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AutoDriverComponent: Cannot wait for widget - component is disabled"));
+		return false;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return false;
+	}
+
+	// Simple polling implementation
+	float ElapsedTime = 0.0f;
+	const float PollInterval = 0.1f;
+
+	while (ElapsedTime < Timeout)
+	{
+		FWidgetInfo Info = UWidgetQueryHelper::FindWidgetByName(World, WidgetName);
+		if (!Info.IsValid())
+		{
+			return true;
+		}
+
+		FPlatformProcess::Sleep(PollInterval);
+		ElapsedTime += PollInterval;
+	}
+
+	return false;
+}
+
+FWidgetInfo UAutoDriverComponent::FindWidget(const FString& WidgetName)
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return FWidgetInfo();
+	}
+
+	return UWidgetQueryHelper::FindWidgetByName(World, WidgetName);
+}
+
+TArray<FWidgetInfo> UAutoDriverComponent::FindWidgets(const FWidgetQueryParams& QueryParams)
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return TArray<FWidgetInfo>();
+	}
+
+	return UWidgetQueryHelper::FindWidgets(World, QueryParams);
+}
+
+FString UAutoDriverComponent::GetWidgetText(const FString& WidgetName)
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return FString();
+	}
+
+	FWidgetInfo Info = UWidgetQueryHelper::FindWidgetByName(World, WidgetName);
+	return Info.TextContent;
+}
+
+bool UAutoDriverComponent::IsWidgetVisible(const FString& WidgetName)
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return false;
+	}
+
+	FWidgetInfo Info = UWidgetQueryHelper::FindWidgetByName(World, WidgetName);
+	return Info.IsValid() && Info.bIsVisible;
+}
+
+TArray<FWidgetInfo> UAutoDriverComponent::GetAllButtons()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return TArray<FWidgetInfo>();
+	}
+
+	return UWidgetQueryHelper::FindAllButtons(World);
 }

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(UI\"\\)\nbool ClickWidget\\(const FString& WidgetName, const FUIClickParams& ClickParams = FUIClickParams\\(\\)\\);\n\n// Click widget by query\nUFUNCTION\\(BlueprintCallable, Category = \"Auto Driver)",
+      "Bash(UI\"\\)\nbool ClickWidgetByQuery\\(const FWidgetQueryParams& QueryParams, const FUIClickParams& ClickParams = FUIClickParams\\(\\)\\);\n\n// Wait for widget to appear\nUFUNCTION\\(BlueprintCallable, Category = \"Auto Driver)",
+      "Bash(UI\"\\)\nbool WaitForWidget\\(const FString& WidgetName, float Timeout = 10.0f\\);\n\n// Wait for widget to disappear\nUFUNCTION\\(BlueprintCallable, Category = \"Auto Driver)",
+      "Bash(UI\"\\)\nbool WaitForWidgetToDisappear\\(const FString& WidgetName, float Timeout = 10.0f\\);\n\n// Find widget by name\nUFUNCTION\\(BlueprintCallable, Category = \"Auto Driver)",
+      "Bash(UI\"\\)\nFWidgetInfo FindWidget\\(const FString& WidgetName\\);\n\n// Find widgets by query\nUFUNCTION\\(BlueprintCallable, Category = \"Auto Driver)",
+      "Bash(UI\"\\)\nTArray<FWidgetInfo> FindWidgets\\(const FWidgetQueryParams& QueryParams\\);\n\n// Get text from widget\nUFUNCTION\\(BlueprintCallable, Category = \"Auto Driver)",
+      "Bash(UI\"\\)\nFString GetWidgetText\\(const FString& WidgetName\\);\n\n// Check widget visibility\nUFUNCTION\\(BlueprintCallable, Category = \"Auto Driver)",
+      "Bash(UI\"\\)\nbool IsWidgetVisible\\(const FString& WidgetName\\);\n\n// Get all visible buttons\nUFUNCTION\\(BlueprintCallable, Category = \"Auto Driver)"
+    ]
+  }
+}

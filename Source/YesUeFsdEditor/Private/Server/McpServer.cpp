@@ -7,6 +7,9 @@
 #include "JsonObjectConverter.h"
 #include "AutoDriver/AutoDriverComponent.h"
 #include "AutoDriver/AutoDriverSubsystem.h"
+#include "AutoDriver/AutoDriverUITypes.h"
+#include "AutoDriver/WidgetQueryHelper.h"
+#include "AutoDriver/UIInteractionHelper.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "Editor.h"
@@ -279,6 +282,173 @@ void FMcpServer::RegisterDefaultTools()
 		{
 			// TODO: Stop current command
 			return TEXT("Command stopped");
+		}
+	);
+
+	// ========================================
+	// UI Tools
+	// ========================================
+
+	// Register click_widget tool
+	RegisterTool(TEXT("autodriver/click_widget"),
+		[](const TSharedPtr<FJsonObject>& Args) -> FString
+		{
+			FString WidgetName = Args->GetStringField(TEXT("widgetName"));
+
+			UWorld* World = GEditor ? GEditor->GetEditorWorldContext().World() : nullptr;
+			if (!World)
+			{
+				return TEXT("{\"error\": \"No world context\"}");
+			}
+
+			bool Success = UUIInteractionHelper::ClickWidgetByName(World, WidgetName);
+			return FString::Printf(TEXT("{\"success\": %s, \"widgetName\": \"%s\"}"),
+				Success ? TEXT("true") : TEXT("false"), *WidgetName);
+		}
+	);
+
+	// Register find_widget tool
+	RegisterTool(TEXT("autodriver/find_widget"),
+		[](const TSharedPtr<FJsonObject>& Args) -> FString
+		{
+			FString WidgetName = Args->GetStringField(TEXT("widgetName"));
+
+			UWorld* World = GEditor ? GEditor->GetEditorWorldContext().World() : nullptr;
+			if (!World)
+			{
+				return TEXT("{\"found\": false}");
+			}
+
+			FWidgetInfo WidgetInfo = UWidgetQueryHelper::FindWidgetByName(World, WidgetName);
+
+			// Convert to JSON
+			TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+			JsonObject->SetBoolField(TEXT("found"), WidgetInfo.bFound);
+			JsonObject->SetStringField(TEXT("name"), WidgetInfo.Name);
+			JsonObject->SetStringField(TEXT("className"), WidgetInfo.ClassName);
+			JsonObject->SetStringField(TEXT("path"), WidgetInfo.Path);
+			JsonObject->SetNumberField(TEXT("positionX"), WidgetInfo.Position.X);
+			JsonObject->SetNumberField(TEXT("positionY"), WidgetInfo.Position.Y);
+			JsonObject->SetNumberField(TEXT("sizeX"), WidgetInfo.Size.X);
+			JsonObject->SetNumberField(TEXT("sizeY"), WidgetInfo.Size.Y);
+			JsonObject->SetBoolField(TEXT("visible"), WidgetInfo.bIsVisible);
+			JsonObject->SetBoolField(TEXT("enabled"), WidgetInfo.bIsEnabled);
+			JsonObject->SetStringField(TEXT("text"), WidgetInfo.TextContent);
+
+			FString OutputString;
+			TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputString);
+			FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
+
+			return OutputString;
+		}
+	);
+
+	// Register get_widget_text tool
+	RegisterTool(TEXT("autodriver/get_widget_text"),
+		[](const TSharedPtr<FJsonObject>& Args) -> FString
+		{
+			FString WidgetName = Args->GetStringField(TEXT("widgetName"));
+
+			UWorld* World = GEditor ? GEditor->GetEditorWorldContext().World() : nullptr;
+			if (!World)
+			{
+				return TEXT("{\"text\": \"\"}");
+			}
+
+			FWidgetInfo WidgetInfo = UWidgetQueryHelper::FindWidgetByName(World, WidgetName);
+			return FString::Printf(TEXT("{\"text\": \"%s\"}"), *WidgetInfo.TextContent);
+		}
+	);
+
+	// Register wait_for_widget tool
+	RegisterTool(TEXT("autodriver/wait_for_widget"),
+		[](const TSharedPtr<FJsonObject>& Args) -> FString
+		{
+			FString WidgetName = Args->GetStringField(TEXT("widgetName"));
+			float Timeout = Args->HasField(TEXT("timeout"))
+				? Args->GetNumberField(TEXT("timeout"))
+				: 10.0f;
+
+			UWorld* World = GEditor ? GEditor->GetEditorWorldContext().World() : nullptr;
+			if (!World)
+			{
+				return TEXT("{\"success\": false}");
+			}
+
+			// Simple polling implementation
+			float ElapsedTime = 0.0f;
+			const float PollInterval = 0.1f;
+
+			while (ElapsedTime < Timeout)
+			{
+				FWidgetInfo Info = UWidgetQueryHelper::FindWidgetByName(World, WidgetName);
+				if (Info.IsValid())
+				{
+					return TEXT("{\"success\": true}");
+				}
+
+				FPlatformProcess::Sleep(PollInterval);
+				ElapsedTime += PollInterval;
+			}
+
+			return TEXT("{\"success\": false}");
+		}
+	);
+
+	// Register list_buttons tool
+	RegisterTool(TEXT("autodriver/list_buttons"),
+		[](const TSharedPtr<FJsonObject>& Args) -> FString
+		{
+			UWorld* World = GEditor ? GEditor->GetEditorWorldContext().World() : nullptr;
+			if (!World)
+			{
+				return TEXT("[]");
+			}
+
+			TArray<FWidgetInfo> Buttons = UWidgetQueryHelper::FindAllButtons(World);
+
+			// Convert to JSON array
+			TArray<TSharedPtr<FJsonValue>> JsonArray;
+
+			for (const FWidgetInfo& Button : Buttons)
+			{
+				TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+				JsonObject->SetStringField(TEXT("name"), Button.Name);
+				JsonObject->SetStringField(TEXT("className"), Button.ClassName);
+				JsonObject->SetStringField(TEXT("path"), Button.Path);
+				JsonObject->SetNumberField(TEXT("positionX"), Button.Position.X);
+				JsonObject->SetNumberField(TEXT("positionY"), Button.Position.Y);
+				JsonObject->SetNumberField(TEXT("sizeX"), Button.Size.X);
+				JsonObject->SetNumberField(TEXT("sizeY"), Button.Size.Y);
+				JsonObject->SetBoolField(TEXT("visible"), Button.bIsVisible);
+				JsonObject->SetStringField(TEXT("text"), Button.TextContent);
+
+				JsonArray.Add(MakeShareable(new FJsonValueObject(JsonObject)));
+			}
+
+			FString OutputString;
+			TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputString);
+			FJsonSerializer::Serialize(JsonArray, Writer);
+
+			return OutputString;
+		}
+	);
+
+	// Register click_position tool
+	RegisterTool(TEXT("autodriver/click_position"),
+		[](const TSharedPtr<FJsonObject>& Args) -> FString
+		{
+			float X = Args->GetNumberField(TEXT("x"));
+			float Y = Args->GetNumberField(TEXT("y"));
+
+			UWorld* World = GEditor ? GEditor->GetEditorWorldContext().World() : nullptr;
+			if (!World)
+			{
+				return TEXT("{\"success\": false}");
+			}
+
+			bool Success = UUIInteractionHelper::ClickAtScreenPosition(World, FVector2D(X, Y));
+			return FString::Printf(TEXT("{\"success\": %s}"), Success ? TEXT("true") : TEXT("false"));
 		}
 	);
 }

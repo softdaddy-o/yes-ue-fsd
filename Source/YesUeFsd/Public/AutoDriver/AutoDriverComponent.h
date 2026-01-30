@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "AutoDriver/AutoDriverTypes.h"
+#include "AutoDriver/AutoDriverUITypes.h"
 #include "AutoDriverComponent.generated.h"
 
 class IAutoDriverCommand;
@@ -171,6 +172,85 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Auto Driver|Navigation")
 	bool GetRandomReachableLocation(float Radius, FVector& OutLocation);
+
+	// ========================================
+	// UI Commands
+	// ========================================
+
+	/**
+	 * Click a widget by name
+	 * @param WidgetName Name of widget to click
+	 * @param ClickParams Click parameters
+	 * @return True if widget was found and clicked
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|UI")
+	bool ClickWidget(const FString& WidgetName, const FUIClickParams& ClickParams = FUIClickParams());
+
+	/**
+	 * Click a widget by query parameters
+	 * @param QueryParams Widget query parameters
+	 * @param ClickParams Click parameters
+	 * @return True if widget was found and clicked
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|UI")
+	bool ClickWidgetByQuery(const FWidgetQueryParams& QueryParams, const FUIClickParams& ClickParams = FUIClickParams());
+
+	/**
+	 * Wait for a widget to appear
+	 * @param WidgetName Name of widget to wait for
+	 * @param Timeout Maximum time to wait in seconds
+	 * @return True if widget appeared within timeout
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|UI")
+	bool WaitForWidget(const FString& WidgetName, float Timeout = 10.0f);
+
+	/**
+	 * Wait for a widget to disappear
+	 * @param WidgetName Name of widget to wait for disappearance
+	 * @param Timeout Maximum time to wait in seconds
+	 * @return True if widget disappeared within timeout
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|UI")
+	bool WaitForWidgetToDisappear(const FString& WidgetName, float Timeout = 10.0f);
+
+	/**
+	 * Find a widget by name
+	 * @param WidgetName Name of widget to find
+	 * @return Widget info (bFound will be false if not found)
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|UI")
+	FWidgetInfo FindWidget(const FString& WidgetName);
+
+	/**
+	 * Find widgets by query parameters
+	 * @param QueryParams Widget query parameters
+	 * @return Array of widget info
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|UI")
+	TArray<FWidgetInfo> FindWidgets(const FWidgetQueryParams& QueryParams);
+
+	/**
+	 * Get text from a widget
+	 * @param WidgetName Name of widget to get text from
+	 * @return Text content (empty if widget not found or has no text)
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|UI")
+	FString GetWidgetText(const FString& WidgetName);
+
+	/**
+	 * Check if a widget is visible
+	 * @param WidgetName Name of widget to check
+	 * @return True if widget is visible
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|UI")
+	bool IsWidgetVisible(const FString& WidgetName);
+
+	/**
+	 * Get all visible buttons in the UI
+	 * @return Array of button widget info
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|UI")
+	TArray<FWidgetInfo> GetAllButtons();
 
 	// ========================================
 	// Utility

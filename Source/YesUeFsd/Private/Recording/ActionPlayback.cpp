@@ -2,6 +2,7 @@
 
 #include "Recording/ActionPlayback.h"
 #include "AutoDriver/AutoDriverComponent.h"
+#include "AutoDriver/AutoDriverUITypes.h"
 #include "Serialization/JsonSerializer.h"
 #include "Dom/JsonObject.h"
 
@@ -250,6 +251,10 @@ void UActionPlayback::ExecuteAction(const FRecordedAction& Action)
 	{
 		ExecuteInputAction(Action);
 	}
+	else if (Action.ActionType == TEXT("UIClick"))
+	{
+		ExecuteUIClickAction(Action);
+	}
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Unknown action type: %s"), *Action.ActionType);
@@ -341,6 +346,47 @@ void UActionPlayback::ExecuteInputAction(const FRecordedAction& Action)
 	}
 
 	UE_LOG(LogTemp, Verbose, TEXT("Executed input: %s (Value: %.2f)"), *ActionName, Value);
+}
+
+void UActionPlayback::ExecuteUIClickAction(const FRecordedAction& Action)
+{
+	// Parse JSON data
+	TSharedPtr<FJsonObject> JsonObject;
+	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Action.ActionData);
+
+	if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to parse UI click action data"));
+		return;
+	}
+
+	// Extract click parameters
+	FString ClickTypeStr = JsonObject->GetStringField(TEXT("ClickType"));
+	int32 ClickCount = JsonObject->GetIntegerField(TEXT("ClickCount"));
+
+	// Build click params
+	FUIClickParams ClickParams;
+	ClickParams.ClickCount = ClickCount;
+
+	if (ClickTypeStr == TEXT("Right"))
+	{
+		ClickParams.ClickType = EUIClickType::Right;
+	}
+	else if (ClickTypeStr == TEXT("Middle"))
+	{
+		ClickParams.ClickType = EUIClickType::Middle;
+	}
+	else
+	{
+		ClickParams.ClickType = EUIClickType::Left;
+	}
+
+	// Execute UI click command
+	FString WidgetName = Action.ActionName;
+	AutoDriverComponent->ClickWidget(WidgetName, ClickParams);
+
+	UE_LOG(LogTemp, Verbose, TEXT("Executed UI click: %s (Type: %s, Count: %d)"),
+		*WidgetName, *ClickTypeStr, ClickCount);
 }
 
 void UActionPlayback::HandleLoopCompletion()

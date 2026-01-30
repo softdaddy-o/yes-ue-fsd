@@ -240,6 +240,9 @@ private:
 	/** Execute input action */
 	void ExecuteInputAction(const FRecordedAction& Action);
 
+	/** Execute UI click action */
+	void ExecuteUIClickAction(const FRecordedAction& Action);
+
 	/** Handle loop completion */
 	void HandleLoopCompletion();
 

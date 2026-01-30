@@ -3,6 +3,9 @@
 #include "Python/AutoDriverPythonBridge.h"
 #include "AutoDriver/AutoDriverComponent.h"
 #include "AutoDriver/AutoDriverSubsystem.h"
+#include "AutoDriver/AutoDriverUITypes.h"
+#include "AutoDriver/WidgetQueryHelper.h"
+#include "AutoDriver/UIInteractionHelper.h"
 #include "Recording/ActionTimeline.h"
 #include "Recording/ActionRecorder.h"
 #include "Recording/ActionPlayback.h"
@@ -10,6 +13,9 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
 #include "Engine/World.h"
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonWriter.h"
+#include "Serialization/JsonSerializer.h"
 
 UAutoDriverComponent* UAutoDriverPythonBridge::GetAutoDriverForPlayer(int32 PlayerIndex)
 {
@@ -342,4 +348,179 @@ AActor* UAutoDriverPythonBridge::FindActorByName(const FString& ActorName)
 	}
 
 	return nullptr;
+}
+
+// ========================================
+// UI Methods
+// ========================================
+
+bool UAutoDriverPythonBridge::ClickWidget(const FString& WidgetName, int32 PlayerIndex)
+{
+	UAutoDriverComponent* AutoDriver = GetAutoDriverForPlayer(PlayerIndex);
+	if (!AutoDriver)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Python: No AutoDriver found for player %d"), PlayerIndex);
+		return false;
+	}
+
+	return AutoDriver->ClickWidget(WidgetName);
+}
+
+bool UAutoDriverPythonBridge::ClickWidgetWithParams(const FString& WidgetName, const FString& ClickType, int32 ClickCount, int32 PlayerIndex)
+{
+	UAutoDriverComponent* AutoDriver = GetAutoDriverForPlayer(PlayerIndex);
+	if (!AutoDriver)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Python: No AutoDriver found for player %d"), PlayerIndex);
+		return false;
+	}
+
+	FUIClickParams ClickParams;
+	ClickParams.ClickCount = ClickCount;
+
+	if (ClickType.Equals(TEXT("Right"), ESearchCase::IgnoreCase))
+	{
+		ClickParams.ClickType = EUIClickType::Right;
+	}
+	else if (ClickType.Equals(TEXT("Middle"), ESearchCase::IgnoreCase))
+	{
+		ClickParams.ClickType = EUIClickType::Middle;
+	}
+	else
+	{
+		ClickParams.ClickType = EUIClickType::Left;
+	}
+
+	return AutoDriver->ClickWidget(WidgetName, ClickParams);
+}
+
+bool UAutoDriverPythonBridge::WaitForWidget(const FString& WidgetName, float Timeout, int32 PlayerIndex)
+{
+	UAutoDriverComponent* AutoDriver = GetAutoDriverForPlayer(PlayerIndex);
+	if (!AutoDriver)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Python: No AutoDriver found for player %d"), PlayerIndex);
+		return false;
+	}
+
+	return AutoDriver->WaitForWidget(WidgetName, Timeout);
+}
+
+bool UAutoDriverPythonBridge::WaitForWidgetGone(const FString& WidgetName, float Timeout, int32 PlayerIndex)
+{
+	UAutoDriverComponent* AutoDriver = GetAutoDriverForPlayer(PlayerIndex);
+	if (!AutoDriver)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Python: No AutoDriver found for player %d"), PlayerIndex);
+		return false;
+	}
+
+	return AutoDriver->WaitForWidgetToDisappear(WidgetName, Timeout);
+}
+
+FString UAutoDriverPythonBridge::FindWidgetByName(const FString& WidgetName, int32 PlayerIndex)
+{
+	UAutoDriverComponent* AutoDriver = GetAutoDriverForPlayer(PlayerIndex);
+	if (!AutoDriver)
+	{
+		return TEXT("{}");
+	}
+
+	FWidgetInfo WidgetInfo = AutoDriver->FindWidget(WidgetName);
+
+	// Convert to JSON
+	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+	JsonObject->SetBoolField(TEXT("found"), WidgetInfo.bFound);
+	JsonObject->SetStringField(TEXT("name"), WidgetInfo.Name);
+	JsonObject->SetStringField(TEXT("className"), WidgetInfo.ClassName);
+	JsonObject->SetStringField(TEXT("path"), WidgetInfo.Path);
+	JsonObject->SetNumberField(TEXT("positionX"), WidgetInfo.Position.X);
+	JsonObject->SetNumberField(TEXT("positionY"), WidgetInfo.Position.Y);
+	JsonObject->SetNumberField(TEXT("sizeX"), WidgetInfo.Size.X);
+	JsonObject->SetNumberField(TEXT("sizeY"), WidgetInfo.Size.Y);
+	JsonObject->SetBoolField(TEXT("visible"), WidgetInfo.bIsVisible);
+	JsonObject->SetBoolField(TEXT("enabled"), WidgetInfo.bIsEnabled);
+	JsonObject->SetStringField(TEXT("text"), WidgetInfo.TextContent);
+
+	FString OutputString;
+	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputString);
+	FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
+
+	return OutputString;
+}
+
+FString UAutoDriverPythonBridge::FindWidgets(const FString& QueryJson, int32 PlayerIndex)
+{
+	// Parse JSON query (simplified - expects {"name": "...", "className": "...", etc.})
+	// For now, return empty array
+	return TEXT("[]");
+}
+
+FString UAutoDriverPythonBridge::GetWidgetText(const FString& WidgetName, int32 PlayerIndex)
+{
+	UAutoDriverComponent* AutoDriver = GetAutoDriverForPlayer(PlayerIndex);
+	if (!AutoDriver)
+	{
+		return FString();
+	}
+
+	return AutoDriver->GetWidgetText(WidgetName);
+}
+
+bool UAutoDriverPythonBridge::IsWidgetVisible(const FString& WidgetName, int32 PlayerIndex)
+{
+	UAutoDriverComponent* AutoDriver = GetAutoDriverForPlayer(PlayerIndex);
+	if (!AutoDriver)
+	{
+		return false;
+	}
+
+	return AutoDriver->IsWidgetVisible(WidgetName);
+}
+
+FString UAutoDriverPythonBridge::GetAllButtons(int32 PlayerIndex)
+{
+	UAutoDriverComponent* AutoDriver = GetAutoDriverForPlayer(PlayerIndex);
+	if (!AutoDriver)
+	{
+		return TEXT("[]");
+	}
+
+	TArray<FWidgetInfo> Buttons = AutoDriver->GetAllButtons();
+
+	// Convert to JSON array
+	TArray<TSharedPtr<FJsonValue>> JsonArray;
+
+	for (const FWidgetInfo& Button : Buttons)
+	{
+		TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+		JsonObject->SetStringField(TEXT("name"), Button.Name);
+		JsonObject->SetStringField(TEXT("className"), Button.ClassName);
+		JsonObject->SetStringField(TEXT("path"), Button.Path);
+		JsonObject->SetNumberField(TEXT("positionX"), Button.Position.X);
+		JsonObject->SetNumberField(TEXT("positionY"), Button.Position.Y);
+		JsonObject->SetNumberField(TEXT("sizeX"), Button.Size.X);
+		JsonObject->SetNumberField(TEXT("sizeY"), Button.Size.Y);
+		JsonObject->SetBoolField(TEXT("visible"), Button.bIsVisible);
+		JsonObject->SetStringField(TEXT("text"), Button.TextContent);
+
+		JsonArray.Add(MakeShareable(new FJsonValueObject(JsonObject)));
+	}
+
+	FString OutputString;
+	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputString);
+	FJsonSerializer::Serialize(JsonArray, Writer);
+
+	return OutputString;
+}
+
+bool UAutoDriverPythonBridge::ClickAtPosition(float X, float Y, int32 PlayerIndex)
+{
+	UWorld* World = GEngine->GetWorldFromContextObject(GEngine->GameViewport, EGetWorldErrorMode::ReturnNull);
+	if (!World)
+	{
+		return false;
+	}
+
+	return UUIInteractionHelper::ClickAtScreenPosition(World, FVector2D(X, Y));
 }
