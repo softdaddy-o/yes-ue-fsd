@@ -1,0 +1,257 @@
+name: YesUeFsd Tests
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+  workflow_dispatch:
+
+env:
+  UE_VERSION: '5.6'
+  PLUGIN_NAME: 'YesUeFsd'
+
+jobs:
+  cpp-tests:
+    name: C++ Unit Tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Unreal Engine
+        uses: game-ci/unity-builder@v4
+        with:
+          unreal-version: ${{ env.UE_VERSION }}
+
+      - name: Build Plugin
+        run: |
+          RunUAT.bat BuildPlugin -Plugin="${{ github.workspace }}/YesUeFsd.uplugin" -Package="${{ github.workspace }}/Build" -CreateSubFolder
+
+      - name: Run C++ Automation Tests
+        run: |
+          UnrealEditor-Cmd.exe -ExecCmds="Automation RunTests YesUeFsd" -unattended -nopause -NullRHI -log -ReportOutputPath="${{ github.workspace }}/TestResults"
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cpp-test-results
+          path: TestResults/
+
+      - name: Parse Test Results
+        if: always()
+        run: |
+          python .github/scripts/parse_test_results.py TestResults/
+
+  python-tests:
+    name: Python Integration Tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov pytest-html requests
+
+      - name: Setup Unreal Engine
+        uses: game-ci/unity-builder@v4
+        with:
+          unreal-version: ${{ env.UE_VERSION }}
+
+      - name: Build Plugin
+        run: |
+          RunUAT.bat BuildPlugin -Plugin="${{ github.workspace }}/YesUeFsd.uplugin" -Package="${{ github.workspace }}/Build" -CreateSubFolder
+
+      - name: Start Unreal Engine with Plugin
+        run: |
+          Start-Process UnrealEditor-Cmd.exe -ArgumentList "-game -log -unattended" -PassThru
+          Start-Sleep -Seconds 30
+
+      - name: Run Python Tests
+        run: |
+          cd Content/Python
+          pytest tests/ -v --html=report.html --self-contained-html --cov=. --cov-report=xml --cov-report=html
+
+      - name: Upload Python Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: python-test-results
+          path: |
+            Content/Python/report.html
+            Content/Python/htmlcov/
+            Content/Python/coverage.xml
+
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: Content/Python/coverage.xml
+          flags: python-tests
+          name: python-coverage
+
+  performance-tests:
+    name: Performance Benchmarks
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Unreal Engine
+        uses: game-ci/unity-builder@v4
+        with:
+          unreal-version: ${{ env.UE_VERSION }}
+
+      - name: Build Plugin
+        run: |
+          RunUAT.bat BuildPlugin -Plugin="${{ github.workspace }}/YesUeFsd.uplugin" -Package="${{ github.workspace }}/Build" -CreateSubFolder
+
+      - name: Run Performance Tests
+        run: |
+          UnrealEditor-Cmd.exe -ExecCmds="Automation RunTests YesUeFsd.Performance" -unattended -nopause -NullRHI -log -ReportOutputPath="${{ github.workspace }}/PerfResults"
+
+      - name: Upload Performance Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-results
+          path: PerfResults/
+
+      - name: Generate Performance Report
+        if: always()
+        run: |
+          python .github/scripts/generate_perf_report.py PerfResults/
+
+  memory-leak-tests:
+    name: Memory Leak Detection
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Unreal Engine
+        uses: game-ci/unity-builder@v4
+        with:
+          unreal-version: ${{ env.UE_VERSION }}
+
+      - name: Build Plugin
+        run: |
+          RunUAT.bat BuildPlugin -Plugin="${{ github.workspace }}/YesUeFsd.uplugin" -Package="${{ github.workspace }}/Build" -CreateSubFolder
+
+      - name: Run Memory Leak Tests
+        run: |
+          UnrealEditor-Cmd.exe -ExecCmds="Automation RunTests YesUeFsd.MemoryLeak" -unattended -nopause -NullRHI -log -ReportOutputPath="${{ github.workspace }}/MemoryResults"
+
+      - name: Upload Memory Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: memory-test-results
+          path: MemoryResults/
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Unreal Engine
+        uses: game-ci/unity-builder@v4
+        with:
+          unreal-version: ${{ env.UE_VERSION }}
+
+      - name: Build Plugin
+        run: |
+          RunUAT.bat BuildPlugin -Plugin="${{ github.workspace }}/YesUeFsd.uplugin" -Package="${{ github.workspace }}/Build" -CreateSubFolder
+
+      - name: Run Integration Tests
+        run: |
+          UnrealEditor-Cmd.exe -ExecCmds="Automation RunTests YesUeFsd.Integration" -unattended -nopause -NullRHI -log -ReportOutputPath="${{ github.workspace }}/IntegrationResults"
+
+      - name: Upload Integration Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: IntegrationResults/
+
+  thread-safety-tests:
+    name: Thread Safety Tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Unreal Engine
+        uses: game-ci/unity-builder@v4
+        with:
+          unreal-version: ${{ env.UE_VERSION }}
+
+      - name: Build Plugin
+        run: |
+          RunUAT.bat BuildPlugin -Plugin="${{ github.workspace }}/YesUeFsd.uplugin" -Package="${{ github.workspace }}/Build" -CreateSubFolder
+
+      - name: Run Thread Safety Tests
+        run: |
+          UnrealEditor-Cmd.exe -ExecCmds="Automation RunTests YesUeFsd.ThreadSafety" -unattended -nopause -NullRHI -log -ReportOutputPath="${{ github.workspace }}/ThreadResults"
+
+      - name: Upload Thread Safety Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thread-safety-test-results
+          path: ThreadResults/
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [cpp-tests, python-tests, performance-tests, memory-leak-tests, integration-tests, thread-safety-tests]
+    if: always()
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download All Test Results
+        uses: actions/download-artifact@v4
+        with:
+          path: all-test-results/
+
+      - name: Generate Combined Report
+        run: |
+          python .github/scripts/combine_test_reports.py all-test-results/
+
+      - name: Upload Combined Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: combined-test-report
+          path: all-test-results/combined-report.html
+
+      - name: Comment PR with Results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('all-test-results/summary.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });

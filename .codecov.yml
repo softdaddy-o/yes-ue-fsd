@@ -1,0 +1,44 @@
+# Codecov configuration for Yes UE FSD
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...100"
+
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 2%
+        if_ci_failed: error
+
+    patch:
+      default:
+        target: 75%
+        threshold: 5%
+
+  ignore:
+    - "Source/YesUeFsd/Tests/**/*"
+    - "Source/YesUeFsdEditor/Tests/**/*"
+    - "Content/Python/tests/**/*"
+    - "**/*Test.cpp"
+    - "**/*Test.h"
+
+comment:
+  layout: "reach,diff,flags,files,footer"
+  behavior: default
+  require_changes: no
+  require_base: no
+  require_head: yes
+
+flags:
+  python-tests:
+    paths:
+      - Content/Python/
+    carryforward: true
+
+  cpp-tests:
+    paths:
+      - Source/YesUeFsd/
+      - Source/YesUeFsdEditor/
+    carryforward: true
