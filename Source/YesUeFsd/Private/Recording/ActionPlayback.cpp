@@ -367,19 +367,7 @@ void UActionPlayback::ExecuteUIClickAction(const FRecordedAction& Action)
 	// Build click params
 	FUIClickParams ClickParams;
 	ClickParams.ClickCount = ClickCount;
-
-	if (ClickTypeStr == TEXT("Right"))
-	{
-		ClickParams.ClickType = EUIClickType::Right;
-	}
-	else if (ClickTypeStr == TEXT("Middle"))
-	{
-		ClickParams.ClickType = EUIClickType::Middle;
-	}
-	else
-	{
-		ClickParams.ClickType = EUIClickType::Left;
-	}
+	ClickParams.ClickType = FUIClickParams::StringToClickType(ClickTypeStr);
 
 	// Execute UI click command
 	FString WidgetName = Action.ActionName;

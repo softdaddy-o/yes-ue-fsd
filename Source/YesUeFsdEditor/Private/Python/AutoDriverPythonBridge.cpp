@@ -377,19 +377,7 @@ bool UAutoDriverPythonBridge::ClickWidgetWithParams(const FString& WidgetName, c
 
 	FUIClickParams ClickParams;
 	ClickParams.ClickCount = ClickCount;
-
-	if (ClickType.Equals(TEXT("Right"), ESearchCase::IgnoreCase))
-	{
-		ClickParams.ClickType = EUIClickType::Right;
-	}
-	else if (ClickType.Equals(TEXT("Middle"), ESearchCase::IgnoreCase))
-	{
-		ClickParams.ClickType = EUIClickType::Middle;
-	}
-	else
-	{
-		ClickParams.ClickType = EUIClickType::Left;
-	}
+	ClickParams.ClickType = FUIClickParams::StringToClickType(ClickType);
 
 	return AutoDriver->ClickWidget(WidgetName, ClickParams);
 }

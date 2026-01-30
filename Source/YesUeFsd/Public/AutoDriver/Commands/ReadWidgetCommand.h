@@ -33,6 +33,10 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "Auto Driver|UI")
 	float Timeout = 5.0f;
 
+	/** Interval between retry attempts (seconds) */
+	UPROPERTY(BlueprintReadWrite, Category = "Auto Driver|UI")
+	float RetryInterval = 0.1f;
+
 	// ========================================
 	// Results
 	// ========================================
@@ -103,9 +107,6 @@ protected:
 
 	/** Time since last retry */
 	float TimeSinceLastRetry = 0.0f;
-
-	/** Retry interval */
-	float RetryInterval = 0.1f;
 
 	/** Has found widget */
 	bool bHasFound = false;

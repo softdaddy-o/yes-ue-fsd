@@ -150,36 +150,17 @@ bool UClickWidgetCommand::TryClickWidget()
 		return false;
 	}
 
-	// Find the widget
+	// Find and validate the widget
 	FWidgetInfo WidgetInfo = UWidgetQueryHelper::FindWidget(World, QueryParams);
-
 	if (!WidgetInfo.IsValid())
 	{
 		return false;
 	}
 
-	// Find the actual widget pointer
+	// Find the actual widget pointer using the same query
 	UWidget* Widget = UWidgetQueryHelper::FindWidgetByPredicate(World, [this](UWidget* W)
 	{
-		if (!W)
-		{
-			return false;
-		}
-
-		switch (QueryParams.QueryType)
-		{
-			case EWidgetQueryType::ByName:
-				return W->GetName().Equals(QueryParams.Name);
-			case EWidgetQueryType::ByClass:
-				return W->GetClass()->GetName().Contains(QueryParams.ClassName);
-			case EWidgetQueryType::ByText:
-			{
-				FString WidgetText = UWidgetQueryHelper::GetWidgetText(W);
-				return WidgetText.Contains(QueryParams.Text);
-			}
-			default:
-				return false;
-		}
+		return W && UWidgetQueryHelper::MatchesQuery(W, QueryParams);
 	});
 
 	if (!Widget)
@@ -187,6 +168,5 @@ bool UClickWidgetCommand::TryClickWidget()
 		return false;
 	}
 
-	// Click the widget
 	return UUIInteractionHelper::ClickWidget(World, Widget, ClickParams);
 }

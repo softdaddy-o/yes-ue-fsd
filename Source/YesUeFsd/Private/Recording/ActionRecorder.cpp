@@ -226,23 +226,8 @@ void UActionRecorder::RecordUIClickAction(const FString& WidgetName, const FUICl
 		return;
 	}
 
-	// Convert ClickParams to JSON string
-	FString ClickTypeStr;
-	switch (ClickParams.ClickType)
-	{
-		case EUIClickType::Left:
-			ClickTypeStr = TEXT("Left");
-			break;
-		case EUIClickType::Right:
-			ClickTypeStr = TEXT("Right");
-			break;
-		case EUIClickType::Middle:
-			ClickTypeStr = TEXT("Middle");
-			break;
-	}
-
 	FString ActionData = FString::Printf(TEXT("{\"ClickType\":\"%s\",\"ClickCount\":%d}"),
-		*ClickTypeStr, ClickParams.ClickCount);
+		*FUIClickParams::ClickTypeToString(ClickParams.ClickType), ClickParams.ClickCount);
 
 	FRecordedAction Action(RecordingTime, TEXT("UIClick"), WidgetName, ActionData);
 	CurrentTimeline->AddAction(Action);

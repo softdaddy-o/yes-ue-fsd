@@ -210,4 +210,29 @@ struct YESUEFSD_API FUIClickParams
 		Params.ClickCount = 2;
 		return Params;
 	}
+
+	/** Convert click type to string */
+	static FString ClickTypeToString(EUIClickType InClickType)
+	{
+		switch (InClickType)
+		{
+			case EUIClickType::Right:  return TEXT("Right");
+			case EUIClickType::Middle: return TEXT("Middle");
+			default:                   return TEXT("Left");
+		}
+	}
+
+	/** Convert string to click type */
+	static EUIClickType StringToClickType(const FString& InString)
+	{
+		if (InString.Equals(TEXT("Right"), ESearchCase::IgnoreCase))
+		{
+			return EUIClickType::Right;
+		}
+		if (InString.Equals(TEXT("Middle"), ESearchCase::IgnoreCase))
+		{
+			return EUIClickType::Middle;
+		}
+		return EUIClickType::Left;
+	}
 };

@@ -149,11 +149,19 @@ public:
 	 */
 	static TArray<UWidget*> FindAllWidgetsByPredicate(UWorld* World, TFunction<bool(UWidget*)> Predicate);
 
-private:
+	// ========================================
+	// Widget Matching
+	// ========================================
+
 	/**
-	 * Helper to match widget against query parameters
+	 * Check if a widget matches the given query parameters
+	 * @param Widget Widget to check
+	 * @param QueryParams Query parameters to match against
+	 * @return True if widget matches the query
 	 */
 	static bool MatchesQuery(UWidget* Widget, const FWidgetQueryParams& QueryParams);
+
+private:
 
 	/**
 	 * Helper to recursively traverse widget tree
