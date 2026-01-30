@@ -1,0 +1,62 @@
+name: Label Issues and PRs
+
+on:
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Label feature requests
+        if: github.event_name == 'issues' && contains(github.event.issue.title, '[Feature]')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['enhancement']
+            })
+
+      - name: Label bug reports
+        if: github.event_name == 'issues' && contains(github.event.issue.title, '[Bug]')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['bug']
+            })
+
+      - name: Label PRs by type
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.pull_request.title.toLowerCase();
+            const labels = [];
+
+            if (title.includes('fix')) labels.push('bug');
+            if (title.includes('feat') || title.includes('feature')) labels.push('enhancement');
+            if (title.includes('docs')) labels.push('documentation');
+            if (title.includes('perf')) labels.push('performance');
+            if (title.includes('refactor')) labels.push('refactoring');
+
+            if (labels.length > 0) {
+              github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: labels
+              });
+            }
