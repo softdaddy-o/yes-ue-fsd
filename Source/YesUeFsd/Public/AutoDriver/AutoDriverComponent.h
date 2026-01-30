@@ -1,0 +1,203 @@
+// Copyright Epic Games, Inc. All Rights Reserved.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Components/ActorComponent.h"
+#include "AutoDriver/AutoDriverTypes.h"
+#include "AutoDriverComponent.generated.h"
+
+class IAutoDriverCommand;
+class AAIController;
+class ACharacter;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAutoDriverCommandComplete, bool, bSuccess, const FString&, Message);
+
+/**
+ * Auto Driver Component
+ *
+ * Attach this component to a PlayerController or Character to enable automatic control.
+ * Provides high-level automation functions like MoveTo, LookAt, PressButton, etc.
+ *
+ * Usage:
+ *   - Add to PlayerController in Blueprint or C++
+ *   - Call MoveToLocation(), RotateToRotation(), etc.
+ *   - Monitor command completion via OnCommandComplete delegate
+ */
+UCLASS(ClassGroup=(AutoDriver), meta=(BlueprintSpawnableComponent))
+class YESUEFSD_API UAutoDriverComponent : public UActorComponent
+{
+	GENERATED_BODY()
+
+public:
+	UAutoDriverComponent();
+
+protected:
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+public:
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	// ========================================
+	// Command Execution
+	// ========================================
+
+	/**
+	 * Execute a custom command
+	 * @param Command The command to execute
+	 * @return True if command started successfully
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver")
+	bool ExecuteCommand(TScriptInterface<IAutoDriverCommand> Command);
+
+	/**
+	 * Stop the currently executing command
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver")
+	void StopCurrentCommand();
+
+	/**
+	 * Check if a command is currently executing
+	 */
+	UFUNCTION(BlueprintPure, Category = "Auto Driver")
+	bool IsExecutingCommand() const { return CurrentCommand.IsValid(); }
+
+	// ========================================
+	// Movement Commands
+	// ========================================
+
+	/**
+	 * Move to a target location
+	 * @param Params Movement parameters
+	 * @return True if movement started successfully
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|Movement")
+	bool MoveToLocation(const FAutoDriverMoveParams& Params);
+
+	/**
+	 * Move to a target actor
+	 * @param TargetActor Actor to move to
+	 * @param AcceptanceRadius How close to get
+	 * @return True if movement started successfully
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|Movement")
+	bool MoveToActor(AActor* TargetActor, float AcceptanceRadius = 50.0f);
+
+	/**
+	 * Stop current movement
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|Movement")
+	void StopMovement();
+
+	// ========================================
+	// Rotation Commands
+	// ========================================
+
+	/**
+	 * Rotate to a target rotation
+	 * @param Params Rotation parameters
+	 * @return True if rotation started successfully
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|Rotation")
+	bool RotateToRotation(const FAutoDriverRotateParams& Params);
+
+	/**
+	 * Look at a target location
+	 * @param TargetLocation World location to look at
+	 * @param RotationSpeed Rotation speed in degrees per second
+	 * @return True if rotation started successfully
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|Rotation")
+	bool LookAtLocation(FVector TargetLocation, float RotationSpeed = 180.0f);
+
+	/**
+	 * Look at a target actor
+	 * @param TargetActor Actor to look at
+	 * @param RotationSpeed Rotation speed in degrees per second
+	 * @return True if rotation started successfully
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|Rotation")
+	bool LookAtActor(AActor* TargetActor, float RotationSpeed = 180.0f);
+
+	// ========================================
+	// Input Commands
+	// ========================================
+
+	/**
+	 * Simulate a button press
+	 * @param ActionName Name of the action to press
+	 * @param Duration How long to hold (0 = instant press)
+	 * @return True if input started successfully
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|Input")
+	bool PressButton(FName ActionName, float Duration = 0.0f);
+
+	/**
+	 * Simulate an axis input
+	 * @param ActionName Name of the axis action
+	 * @param Value Axis value (-1 to 1)
+	 * @param Duration How long to hold the value
+	 * @return True if input started successfully
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver|Input")
+	bool SetAxisValue(FName ActionName, float Value, float Duration = 0.0f);
+
+	// ========================================
+	// Utility
+	// ========================================
+
+	/**
+	 * Get the controlled pawn
+	 */
+	UFUNCTION(BlueprintPure, Category = "Auto Driver")
+	APawn* GetControlledPawn() const;
+
+	/**
+	 * Get the controlled character (if pawn is a character)
+	 */
+	UFUNCTION(BlueprintPure, Category = "Auto Driver")
+	ACharacter* GetControlledCharacter() const;
+
+	/**
+	 * Enable or disable auto driver
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Auto Driver")
+	void SetEnabled(bool bInEnabled);
+
+	/**
+	 * Check if auto driver is enabled
+	 */
+	UFUNCTION(BlueprintPure, Category = "Auto Driver")
+	bool IsEnabled() const { return bEnabled; }
+
+	// ========================================
+	// Delegates
+	// ========================================
+
+	/** Called when a command completes */
+	UPROPERTY(BlueprintAssignable, Category = "Auto Driver")
+	FOnAutoDriverCommandComplete OnCommandComplete;
+
+protected:
+	/** Currently executing command */
+	TSharedPtr<IAutoDriverCommand> CurrentCommand;
+
+	/** Is the auto driver enabled */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Auto Driver")
+	bool bEnabled = true;
+
+	/** Debug visualization */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Auto Driver|Debug")
+	bool bShowDebugInfo = false;
+
+	/** Cached player controller */
+	UPROPERTY()
+	APlayerController* CachedPlayerController;
+
+	/** Command completion callback */
+	void OnCommandCompleted(const FAutoDriverCommandResult& Result);
+
+	/** Get or create AI controller for navigation */
+	AAIController* GetOrCreateAIController();
+};
