@@ -25,11 +25,11 @@ class InstanceContext:
         Returns:
             InstanceContext populated from environment
         """
-        ctx = cls()
-        ctx.instance_id = int(os.getenv("UE_INSTANCE_ID", "0"))
-        ctx.role = os.getenv("UE_INSTANCE_ROLE", "client")
-        ctx.port = int(os.getenv("UE_INSTANCE_PORT", "7777"))
-        return ctx
+        return cls(
+            instance_id=int(os.getenv("UE_INSTANCE_ID", "0")),
+            role=os.getenv("UE_INSTANCE_ROLE", "client"),
+            port=int(os.getenv("UE_INSTANCE_PORT", "7777")),
+        )
 
     def is_server(self) -> bool:
         """Check if this instance is a server."""

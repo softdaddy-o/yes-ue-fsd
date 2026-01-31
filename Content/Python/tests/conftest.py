@@ -75,8 +75,7 @@ async def multiplayer_editors(editor_launcher):
         roles=["client", "client"]
     )
     yield instances
-    for instance in instances:
-        await instance.stop()
+    await asyncio.gather(*(instance.stop() for instance in instances))
 
 
 @pytest.fixture
@@ -91,8 +90,7 @@ async def server_and_clients(editor_launcher):
         roles=["server", "client", "client"]
     )
     yield instances
-    for instance in instances:
-        await instance.stop()
+    await asyncio.gather(*(instance.stop() for instance in instances))
 
 
 @pytest.fixture

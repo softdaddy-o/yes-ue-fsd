@@ -8,7 +8,7 @@ test runs and generating reports.
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from xml.etree import ElementTree as ET
 
 from .test_runner import TestResult

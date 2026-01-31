@@ -49,13 +49,14 @@ class TestResult:
 
     def get_summary(self) -> Dict[str, Any]:
         """Get summary statistics."""
+        passed_count = sum(r.success for r in self.instance_results)
         return {
             "name": self.scenario_name,
             "success": self.success,
             "duration": self.duration,
             "instances": len(self.instance_results),
-            "passed": sum(1 for r in self.instance_results if r.success),
-            "failed": sum(1 for r in self.instance_results if not r.success),
+            "passed": passed_count,
+            "failed": len(self.instance_results) - passed_count,
             "errors": len(self.errors),
             "screenshots": len(self.screenshots),
         }

@@ -256,12 +256,11 @@ class EditorInstance:
         Returns:
             Memory usage or None if not running
         """
-        if not self.is_running():
+        if self.pid is None:
             return None
-
         try:
             process = psutil.Process(self.pid)
-            return process.memory_info().rss / 1024 / 1024  # Convert to MB
+            return process.memory_info().rss / (1024 * 1024)
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             return None
 
@@ -272,9 +271,8 @@ class EditorInstance:
         Returns:
             CPU usage or None if not running
         """
-        if not self.is_running():
+        if self.pid is None:
             return None
-
         try:
             process = psutil.Process(self.pid)
             return process.cpu_percent(interval=0.1)
@@ -465,9 +463,7 @@ class EditorLauncher:
         Returns:
             Total memory usage
         """
-        total = 0.0
-        for instance in self.instances:
-            usage = instance.get_memory_usage()
-            if usage:
-                total += usage
-        return total
+        return sum(
+            usage for instance in self.instances
+            if (usage := instance.get_memory_usage()) is not None
+        )
