@@ -22,3 +22,6 @@ pytest-xdist>=3.0.0  # Run tests in parallel
 
 # BDD support
 pytest-bdd>=6.1.0  # Gherkin-style BDD testing
+
+# Test retry and flake detection
+pytest-rerunfailures>=12.0  # Retry failed tests automatically
