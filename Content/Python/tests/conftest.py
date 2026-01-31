@@ -131,6 +131,18 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "stress: mark test as stress/performance test"
     )
+    config.addinivalue_line(
+        "markers", "bdd: mark test as BDD/Gherkin test"
+    )
+    config.addinivalue_line(
+        "markers", "visual: mark test as visual regression test"
+    )
+    config.addinivalue_line(
+        "markers", "performance: mark test as performance profiling test"
+    )
+    config.addinivalue_line(
+        "markers", "flaky: mark test as potentially flaky (will retry on failure)"
+    )
 
 
 # Custom assertions
