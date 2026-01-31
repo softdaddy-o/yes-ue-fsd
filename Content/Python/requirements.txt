@@ -11,6 +11,8 @@ psutil>=5.9.0
 # Optional: Enhanced reporting
 pytest-html>=3.1.0  # HTML test reports
 pytest-json-report>=1.5.0  # JSON test reports
+allure-pytest>=2.13.0  # Allure test reports with rich visualizations
+pytest-metadata>=3.0.0  # Add metadata to test reports
 
 # Optional: Coverage
 pytest-cov>=4.0.0  # Code coverage
