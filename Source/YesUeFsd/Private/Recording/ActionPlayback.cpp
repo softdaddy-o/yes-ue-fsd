@@ -287,8 +287,8 @@ void UActionPlayback::ExecuteMovementAction(const FRecordedAction& Action)
 	Params.MovementMode = static_cast<EAutoDriverMovementMode>(
 		static_cast<int32>(JsonObject->GetNumberField(TEXT("MovementMode"))));
 
-	// Execute movement command
-	AutoDriverComponent->MoveToLocation(TargetLocation, Params.AcceptanceRadius, Params.SpeedMultiplier, Params.bShouldSprint);
+	// Execute movement command (UE 5.7: Use params struct)
+	AutoDriverComponent->MoveToLocation(Params);
 
 	UE_LOG(LogTemp, Verbose, TEXT("Executed movement to: %s"), *TargetLocation.ToString());
 }
@@ -316,8 +316,8 @@ void UActionPlayback::ExecuteRotationAction(const FRecordedAction& Action)
 	Params.RotationSpeed = JsonObject->GetNumberField(TEXT("RotationSpeed"));
 	Params.AcceptanceAngle = JsonObject->GetNumberField(TEXT("AcceptanceAngle"));
 
-	// Execute rotation command
-	AutoDriverComponent->RotateToRotation(TargetRotation);
+	// Execute rotation command (UE 5.7: Use params struct)
+	AutoDriverComponent->RotateToRotation(Params);
 
 	UE_LOG(LogTemp, Verbose, TEXT("Executed rotation to: %s"), *TargetRotation.ToString());
 }
