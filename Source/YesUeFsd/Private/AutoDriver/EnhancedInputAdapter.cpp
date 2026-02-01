@@ -47,15 +47,15 @@ void UEnhancedInputAdapter::RegisterActionMapping(const FEnhancedInputActionMapp
 	}
 
 	// Check if already registered
-	for (const FEnhancedInputActionMapping& ExistingMapping : ActionMappings)
+	// Check if action already exists and remove it (UE 5.7: Use RemoveAll with predicate instead of Remove)
+	int32 RemovedCount = ActionMappings.RemoveAll([&Mapping](const FEnhancedInputActionMapping& ExistingMapping)
 	{
-		if (ExistingMapping.ActionName == Mapping.ActionName)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("EnhancedInputAdapter: Action %s is already registered. Updating mapping."), *Mapping.ActionName.ToString());
-			// Remove old mapping
-			ActionMappings.Remove(ExistingMapping);
-			break;
-		}
+		return ExistingMapping.ActionName == Mapping.ActionName;
+	});
+
+	if (RemovedCount > 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("EnhancedInputAdapter: Action %s was already registered. Updated mapping."), *Mapping.ActionName.ToString());
 	}
 
 	ActionMappings.Add(Mapping);
