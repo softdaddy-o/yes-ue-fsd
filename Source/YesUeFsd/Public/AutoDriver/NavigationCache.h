@@ -66,10 +66,10 @@ public:
 	 * Add a path result to the cache
 	 * @param From Starting location
 	 * @param To Ending location
-	 * @param Path Path result (can be null for failed paths)
+	 * @param Path Path result (can be null for failed paths) - UE 5.7: Changed to FNavigationPath*
 	 * @param PathLength Length of the path
 	 */
-	void CachePath(const FVector& From, const FVector& To, UNavigationPath* Path, float PathLength);
+	void CachePath(const FVector& From, const FVector& To, FNavigationPath* Path, float PathLength);
 
 	/**
 	 * Clear the cache

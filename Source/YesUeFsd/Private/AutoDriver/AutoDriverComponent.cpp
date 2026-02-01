@@ -6,6 +6,7 @@
 #include "AutoDriver/UIInteractionHelper.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "AIController.h"
 #include "NavigationSystem.h"
 #include "NavigationPath.h"

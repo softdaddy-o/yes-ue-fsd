@@ -165,8 +165,15 @@ void UEnhancedInputAdapter::ClearAllMappingContexts()
 
 TArray<UInputMappingContext*> UEnhancedInputAdapter::GetActiveMappingContexts() const
 {
+	// UE 5.7: GetKeys requires matching template types
+	TArray<TObjectPtr<UInputMappingContext>> ContextKeys;
+	ActiveContexts.GetKeys(ContextKeys);
+
 	TArray<UInputMappingContext*> Contexts;
-	ActiveContexts.GetKeys(Contexts);
+	for (const TObjectPtr<UInputMappingContext>& Context : ContextKeys)
+	{
+		Contexts.Add(Context.Get());
+	}
 	return Contexts;
 }
 
@@ -186,8 +193,10 @@ bool UEnhancedInputAdapter::InjectInputAction(FName ActionName, FInputActionValu
 		return false;
 	}
 
-	// Inject the input
-	Subsystem->InjectInputForAction(InputAction, ActionValue);
+	// Inject the input (UE 5.7: InjectInputForAction now requires Modifiers and Triggers arrays)
+	TArray<UInputModifier*> Modifiers;
+	TArray<UInputTrigger*> Triggers;
+	Subsystem->InjectInputForAction(InputAction, ActionValue, Modifiers, Triggers);
 
 	UE_LOG(LogTemp, Verbose, TEXT("EnhancedInputAdapter: Injected input for %s"), *ActionName.ToString());
 	return true;

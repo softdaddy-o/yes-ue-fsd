@@ -43,8 +43,10 @@ EBTNodeResult::Type UBTTask_AutoDriverRotate::ExecuteTask(UBehaviorTreeComponent
 		UE_LOG(LogTemp, Log, TEXT("BTTask_AutoDriverRotate: Rotating to %s"), *TargetRotation.ToString());
 	}
 
-	// Execute rotation command
-	bool bSuccess = AutoDriver->RotateToRotation(TargetRotation);
+	// Execute rotation command (UE 5.7: Use params struct)
+	FAutoDriverRotateParams Params;
+	Params.TargetRotation = TargetRotation;
+	bool bSuccess = AutoDriver->RotateToRotation(Params);
 
 	if (!bSuccess)
 	{

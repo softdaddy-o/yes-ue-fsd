@@ -35,7 +35,7 @@ bool FNavigationQueryCache::FindCachedPath(const FVector& From, const FVector& T
 	return false;
 }
 
-void FNavigationQueryCache::CachePath(const FVector& From, const FVector& To, UNavigationPath* Path, float PathLength)
+void FNavigationQueryCache::CachePath(const FVector& From, const FVector& To, FNavigationPath* Path, float PathLength)
 {
 	FScopeLock Lock(&CacheMutex);
 

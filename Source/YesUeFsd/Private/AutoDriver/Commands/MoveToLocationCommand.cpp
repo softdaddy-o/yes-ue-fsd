@@ -237,8 +237,8 @@ bool UMoveToLocationCommand::ExecuteNavigationMovement()
 		true   // Project destination to navigation
 	);
 
-	if (MoveResult == EPathFollowingRequestResult::RequestSuccessful ||
-		MoveResult == EPathFollowingRequestResult::AlreadyAtGoal)
+	// UE 5.7: EPathFollowingRequestResult enum values changed - check if request didn't fail
+	if (MoveResult != EPathFollowingRequestResult::Type::Failed)
 	{
 		UE_LOG(LogTemp, Log, TEXT("MoveToLocationCommand: Navigation movement started"));
 		return true;
