@@ -107,8 +107,21 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Testing|Screenshot")
 	static bool CaptureScreenshot(
 		const FString& TestName,
-		const FString& Phase = TEXT("Execution"),
-		const TMap<FString, FString>& CustomMetadata = TMap<FString, FString>()
+		const FString& Phase = TEXT("Execution")
+	);
+
+	/**
+	 * Capture a screenshot with custom metadata
+	 * @param TestName Name of the test
+	 * @param Phase Test phase (e.g., "Setup", "Execution", "Teardown")
+	 * @param CustomMetadata Additional metadata to store
+	 * @return True if screenshot was captured successfully
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Testing|Screenshot")
+	static bool CaptureScreenshotWithCustomMetadata(
+		const FString& TestName,
+		const FString& Phase,
+		const TMap<FString, FString>& CustomMetadata
 	);
 
 	/**

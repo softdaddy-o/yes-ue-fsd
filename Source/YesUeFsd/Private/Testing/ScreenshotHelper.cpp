@@ -25,6 +25,23 @@ TArray<FScreenshotMetadata> UScreenshotHelper::PendingScreenshots;
 
 bool UScreenshotHelper::CaptureScreenshot(
 	const FString& TestName,
+	const FString& Phase)
+{
+	if (!bEnabled)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Screenshot capture is disabled"));
+		return false;
+	}
+
+	FScreenshotMetadata Metadata;
+	Metadata.TestName = TestName;
+	Metadata.TestPhase = Phase;
+
+	return CaptureScreenshotInternal(Metadata);
+}
+
+bool UScreenshotHelper::CaptureScreenshotWithCustomMetadata(
+	const FString& TestName,
 	const FString& Phase,
 	const TMap<FString, FString>& CustomMetadata)
 {
@@ -64,7 +81,7 @@ bool UScreenshotHelper::CaptureScreenshotOnFailure(const FString& TestName, cons
 	CustomMetadata.Add(TEXT("ErrorMessage"), ErrorMessage);
 	CustomMetadata.Add(TEXT("FailureType"), TEXT("TestFailure"));
 
-	return CaptureScreenshot(TestName, TEXT("Failure"), CustomMetadata);
+	return CaptureScreenshotWithCustomMetadata(TestName, TEXT("Failure"), CustomMetadata);
 }
 
 bool UScreenshotHelper::CaptureScreenshotInternal(FScreenshotMetadata& Metadata)
