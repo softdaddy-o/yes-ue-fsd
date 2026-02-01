@@ -28,8 +28,8 @@ protected:
 	/** Get AI controller from the behavior tree */
 	AAIController* GetAIController(UBehaviorTreeComponent& OwnerComp) const;
 
-	/** Helper to abort the task */
-	void AbortTask(UBehaviorTreeComponent& OwnerComp, EBTNodeResult::Type Result);
+	/** Override: Handle task abortion (UE 5.7 signature) */
+	virtual EBTNodeResult::Type AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 
 	/** Timeout for AutoDriver commands (0 = no timeout) */
 	UPROPERTY(EditAnywhere, Category = "AutoDriver", meta = (ClampMin = "0.0"))

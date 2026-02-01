@@ -8,7 +8,12 @@
       "Bash(UI\"\\)\nFWidgetInfo FindWidget\\(const FString& WidgetName\\);\n\n// Find widgets by query\nUFUNCTION\\(BlueprintCallable, Category = \"Auto Driver)",
       "Bash(UI\"\\)\nTArray<FWidgetInfo> FindWidgets\\(const FWidgetQueryParams& QueryParams\\);\n\n// Get text from widget\nUFUNCTION\\(BlueprintCallable, Category = \"Auto Driver)",
       "Bash(UI\"\\)\nFString GetWidgetText\\(const FString& WidgetName\\);\n\n// Check widget visibility\nUFUNCTION\\(BlueprintCallable, Category = \"Auto Driver)",
-      "Bash(UI\"\\)\nbool IsWidgetVisible\\(const FString& WidgetName\\);\n\n// Get all visible buttons\nUFUNCTION\\(BlueprintCallable, Category = \"Auto Driver)"
+      "Bash(UI\"\\)\nbool IsWidgetVisible\\(const FString& WidgetName\\);\n\n// Get all visible buttons\nUFUNCTION\\(BlueprintCallable, Category = \"Auto Driver)",
+      "Bash(pwsh -File copy_plugin.ps1 -Target Elpis)",
+      "Bash(powershell.exe:*)",
+      "Bash(where:*)",
+      "Bash(\"D:/Program Files/Epic Games/UE_5.7/Engine/Build/BatchFiles/Build.bat\" ElpisEditor Win64 Development -Project=\"F:\\\\src3\\\\Covenant\\\\ElpisClient\\\\Elpis.uproject\" -WaitMutex -FromMSBuild)",
+      "Bash(tee:*)"
     ]
   }
 }

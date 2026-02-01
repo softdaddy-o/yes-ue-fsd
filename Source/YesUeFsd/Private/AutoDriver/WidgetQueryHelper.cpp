@@ -161,7 +161,8 @@ bool UWidgetQueryHelper::GetWidgetGeometry(UWidget* Widget, FVector2D& OutPositi
 
 	const FGeometry& Geometry = Widget->GetCachedGeometry();
 
-	if (!Geometry.IsValid())
+	// UE 5.7: FGeometry::IsValid() removed, check size instead
+	if (Geometry.GetAbsoluteSize().IsNearlyZero())
 	{
 		return false;
 	}

@@ -506,8 +506,8 @@ void UEnhancedInputAdapter::SetupRecordingBindings()
 		FName ActionName = Mapping.ActionName;
 		UInputAction* InputAction = Mapping.InputAction;
 
-		// Triggered callback - UE 5.7 API: BindAction returns FInputActionBinding&
-		FInputActionBinding& TriggeredBinding = Component->BindAction(InputAction, ETriggerEvent::Triggered,
+		// Triggered callback - UE 5.7 API: Use BindActionValueLambda for lambda callbacks
+		FEnhancedInputActionEventBinding& TriggeredBinding = Component->BindActionValueLambda(InputAction, ETriggerEvent::Triggered,
 			[this, InputAction, ActionName](const FInputActionValue& Value)
 			{
 				RecordInputAction(InputAction, ActionName, Value, true, false, false);
@@ -515,7 +515,7 @@ void UEnhancedInputAdapter::SetupRecordingBindings()
 		RecordingBindingHandles.Add(TriggeredBinding.GetHandle());
 
 		// Started callback
-		FInputActionBinding& StartedBinding = Component->BindAction(InputAction, ETriggerEvent::Started,
+		FEnhancedInputActionEventBinding& StartedBinding = Component->BindActionValueLambda(InputAction, ETriggerEvent::Started,
 			[this, InputAction, ActionName](const FInputActionValue& Value)
 			{
 				RecordInputAction(InputAction, ActionName, Value, false, true, false);
@@ -523,7 +523,7 @@ void UEnhancedInputAdapter::SetupRecordingBindings()
 		RecordingBindingHandles.Add(StartedBinding.GetHandle());
 
 		// Completed callback
-		FInputActionBinding& CompletedBinding = Component->BindAction(InputAction, ETriggerEvent::Completed,
+		FEnhancedInputActionEventBinding& CompletedBinding = Component->BindActionValueLambda(InputAction, ETriggerEvent::Completed,
 			[this, InputAction, ActionName](const FInputActionValue& Value)
 			{
 				RecordInputAction(InputAction, ActionName, Value, false, false, true);

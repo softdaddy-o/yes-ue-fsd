@@ -37,7 +37,7 @@ AAIController* UBTTask_AutoDriverBase::GetAIController(UBehaviorTreeComponent& O
 	return Cast<AAIController>(OwnerComp.GetOwner());
 }
 
-void UBTTask_AutoDriverBase::AbortTask(UBehaviorTreeComponent& OwnerComp, EBTNodeResult::Type Result)
+EBTNodeResult::Type UBTTask_AutoDriverBase::AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
 	ClearTimeoutTimer();
 
@@ -46,7 +46,8 @@ void UBTTask_AutoDriverBase::AbortTask(UBehaviorTreeComponent& OwnerComp, EBTNod
 		AutoDriver->StopCurrentCommand();
 	}
 
-	FinishLatentTask(OwnerComp, Result);
+	// UE 5.7: AbortTask now returns result instead of calling FinishLatentTask
+	return EBTNodeResult::Aborted;
 }
 
 void UBTTask_AutoDriverBase::StartTimeoutTimer(UBehaviorTreeComponent& OwnerComp)
