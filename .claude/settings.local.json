@@ -13,7 +13,8 @@
       "Bash(powershell.exe:*)",
       "Bash(where:*)",
       "Bash(\"D:/Program Files/Epic Games/UE_5.7/Engine/Build/BatchFiles/Build.bat\" ElpisEditor Win64 Development -Project=\"F:\\\\src3\\\\Covenant\\\\ElpisClient\\\\Elpis.uproject\" -WaitMutex -FromMSBuild)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(\"D:/Program Files/Epic Games/UE_5.7/Engine/Build/BatchFiles/Clean.bat\" ElpisEditor Win64 Development -Project=\"F:\\\\src3\\\\Covenant\\\\ElpisClient\\\\Elpis.uproject\")"
     ]
   }
 }
