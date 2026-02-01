@@ -20,7 +20,7 @@ public:
 	{
 		FVector StartLocation;
 		FVector EndLocation;
-		TWeakObjectPtr<UNavigationPath> Path;
+		FNavigationPath* Path;
 		float PathLength;
 		bool bIsValid;
 		double Timestamp;
@@ -28,23 +28,24 @@ public:
 		FCacheEntry()
 			: StartLocation(FVector::ZeroVector)
 			, EndLocation(FVector::ZeroVector)
+			, Path(nullptr)
 			, PathLength(0.0f)
 			, bIsValid(false)
 			, Timestamp(0.0)
 		{}
 
-		FCacheEntry(const FVector& InStart, const FVector& InEnd, UNavigationPath* InPath, float InLength, double InTimestamp)
+		FCacheEntry(const FVector& InStart, const FVector& InEnd, FNavigationPath* InPath, float InLength, double InTimestamp)
 			: StartLocation(InStart)
 			, EndLocation(InEnd)
 			, Path(InPath)
 			, PathLength(InLength)
-			, bIsValid(InPath != nullptr)
+			, bIsValid(InPath != nullptr && InPath->IsValid())
 			, Timestamp(InTimestamp)
 		{}
 
 		bool IsStillValid() const
 		{
-			return bIsValid && Path.IsValid();
+			return bIsValid && Path != nullptr && Path->IsValid();
 		}
 	};
 

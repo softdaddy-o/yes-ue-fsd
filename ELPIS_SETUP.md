@@ -2,6 +2,38 @@
 
 This guide helps you set up the Yes UE FSD testing framework for the Elpis project.
 
+## Development Workflow
+
+**IMPORTANT:** Always edit source files in `D:\srcp\yes-ue-fsd`, not in the Elpis plugin directory.
+
+### Making Changes to the Plugin
+
+1. **Edit source files** in `D:\srcp\yes-ue-fsd\Source\YesUeFsd\`
+   - Never edit files directly in `F:\src3\Covenant\ElpisClient\Plugins\YesUeFsd`
+   - The Elpis directory is a deployment target, not the source of truth
+
+2. **Copy to Elpis** after making changes:
+   ```powershell
+   cd D:\srcp\yes-ue-fsd
+   .\copy_plugin.ps1
+   ```
+   This script safely updates the plugin in both Elpis and GameAnim projects.
+
+3. **Build the Elpis project** to verify changes:
+   ```powershell
+   cd F:\src3\Covenant\ElpisClient
+   & "D:\Program Files\Epic Games\UE_5.7\Engine\Build\BatchFiles\Build.bat" ElpisEditor Win64 Development -Project="F:\src3\Covenant\ElpisClient\Elpis.uproject" -WaitMutex -FromMSBuild
+   ```
+
+4. **Fix any compilation errors** in the source directory (D:\srcp\yes-ue-fsd), then repeat step 2-3.
+
+### Why This Workflow?
+
+- Maintains a single source of truth in `D:\srcp\yes-ue-fsd`
+- Keeps deployment targets clean and synchronized
+- Makes it easy to update multiple projects simultaneously
+- Prevents accidental changes in deployment directories from being lost
+
 ## Plugin Installation
 
 The plugin has been copied to:

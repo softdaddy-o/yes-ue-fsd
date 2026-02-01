@@ -6,6 +6,7 @@
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Vector.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Object.h"
 #include "GameFramework/Actor.h"
+#include "AIController.h"
 
 UBTTask_AutoDriverMove::UBTTask_AutoDriverMove()
 {
@@ -43,7 +44,13 @@ EBTNodeResult::Type UBTTask_AutoDriverMove::ExecuteTask(UBehaviorTreeComponent& 
 	}
 
 	// Execute movement command
-	bool bSuccess = AutoDriver->MoveToLocation(TargetLocation, AcceptanceRadius, SpeedMultiplier, bShouldSprint);
+	FAutoDriverMoveParams Params;
+	Params.TargetLocation = TargetLocation;
+	Params.AcceptanceRadius = AcceptanceRadius;
+	Params.SpeedMultiplier = SpeedMultiplier;
+	Params.bShouldSprint = bShouldSprint;
+	Params.MovementMode = MovementMode;
+	bool bSuccess = AutoDriver->MoveToLocation(Params);
 
 	if (!bSuccess)
 	{
@@ -82,7 +89,8 @@ void UBTTask_AutoDriverMove::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* 
 		FVector TargetLocation;
 		if (GetTargetLocation(OwnerComp, TargetLocation))
 		{
-			APawn* Pawn = GetAIController(OwnerComp)->GetPawn();
+			AAIController* AIController = GetAIController(OwnerComp);
+			APawn* Pawn = AIController ? AIController->GetPawn() : nullptr;
 			if (Pawn)
 			{
 				float Distance = FVector::Dist(Pawn->GetActorLocation(), TargetLocation);

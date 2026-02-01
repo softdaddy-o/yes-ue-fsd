@@ -13,6 +13,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonWriter.h"
 #include "Serialization/JsonSerializer.h"
@@ -54,7 +55,11 @@ bool UAutoDriverPythonBridge::MoveToLocation(FVector Location, float AcceptanceR
 		return false;
 	}
 
-	return AutoDriver->MoveToLocation(Location, AcceptanceRadius, SpeedMultiplier);
+	FAutoDriverMoveParams Params;
+	Params.TargetLocation = Location;
+	Params.AcceptanceRadius = AcceptanceRadius;
+	Params.SpeedMultiplier = SpeedMultiplier;
+	return AutoDriver->MoveToLocation(Params);
 }
 
 bool UAutoDriverPythonBridge::MoveToActor(AActor* TargetActor, float AcceptanceRadius, float SpeedMultiplier, int32 PlayerIndex)
@@ -65,7 +70,7 @@ bool UAutoDriverPythonBridge::MoveToActor(AActor* TargetActor, float AcceptanceR
 		return false;
 	}
 
-	return AutoDriver->MoveToActor(TargetActor, AcceptanceRadius, SpeedMultiplier);
+	return AutoDriver->MoveToActor(TargetActor, AcceptanceRadius);
 }
 
 void UAutoDriverPythonBridge::StopMovement(int32 PlayerIndex)
@@ -85,7 +90,9 @@ bool UAutoDriverPythonBridge::RotateToRotation(FRotator Rotation, int32 PlayerIn
 		return false;
 	}
 
-	return AutoDriver->RotateToRotation(Rotation);
+	FAutoDriverRotateParams Params;
+	Params.TargetRotation = Rotation;
+	return AutoDriver->RotateToRotation(Params);
 }
 
 bool UAutoDriverPythonBridge::LookAtLocation(FVector Location, int32 PlayerIndex)
@@ -151,7 +158,7 @@ float UAutoDriverPythonBridge::GetPathLength(FVector From, FVector To, int32 Pla
 		return -1.0f;
 	}
 
-	return AutoDriver->GetPathLengthToLocation(From, To);
+	return AutoDriver->GetPathLengthToLocation(To);
 }
 
 FVector UAutoDriverPythonBridge::GetRandomReachableLocation(FVector Origin, float Radius, int32 PlayerIndex)
@@ -162,7 +169,12 @@ FVector UAutoDriverPythonBridge::GetRandomReachableLocation(FVector Origin, floa
 		return FVector::ZeroVector;
 	}
 
-	return AutoDriver->GetRandomReachableLocation(Origin, Radius);
+	FVector OutLocation;
+	if (AutoDriver->GetRandomReachableLocation(Radius, OutLocation))
+	{
+		return OutLocation;
+	}
+	return FVector::ZeroVector;
 }
 
 bool UAutoDriverPythonBridge::IsExecutingCommand(int32 PlayerIndex)
