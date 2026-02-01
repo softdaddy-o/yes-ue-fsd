@@ -506,26 +506,29 @@ void UEnhancedInputAdapter::SetupRecordingBindings()
 		FName ActionName = Mapping.ActionName;
 		UInputAction* InputAction = Mapping.InputAction;
 
-		// Triggered callback
-		Component->BindAction(InputAction, ETriggerEvent::Triggered, this,
+		// Triggered callback - UE 5.7 API: BindAction returns FInputActionBinding&
+		FInputActionBinding& TriggeredBinding = Component->BindAction(InputAction, ETriggerEvent::Triggered,
 			[this, InputAction, ActionName](const FInputActionValue& Value)
 			{
 				RecordInputAction(InputAction, ActionName, Value, true, false, false);
 			});
+		RecordingBindingHandles.Add(TriggeredBinding.GetHandle());
 
 		// Started callback
-		Component->BindAction(InputAction, ETriggerEvent::Started, this,
+		FInputActionBinding& StartedBinding = Component->BindAction(InputAction, ETriggerEvent::Started,
 			[this, InputAction, ActionName](const FInputActionValue& Value)
 			{
 				RecordInputAction(InputAction, ActionName, Value, false, true, false);
 			});
+		RecordingBindingHandles.Add(StartedBinding.GetHandle());
 
 		// Completed callback
-		Component->BindAction(InputAction, ETriggerEvent::Completed, this,
+		FInputActionBinding& CompletedBinding = Component->BindAction(InputAction, ETriggerEvent::Completed,
 			[this, InputAction, ActionName](const FInputActionValue& Value)
 			{
 				RecordInputAction(InputAction, ActionName, Value, false, false, true);
 			});
+		RecordingBindingHandles.Add(CompletedBinding.GetHandle());
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("EnhancedInputAdapter: Setup recording bindings for %d actions"), ActionMappings.Num());
@@ -539,15 +542,10 @@ void UEnhancedInputAdapter::ClearRecordingBindings()
 		return;
 	}
 
-	// Remove all bindings for registered actions
-	for (const FEnhancedInputActionMapping& Mapping : ActionMappings)
+	// Remove all bindings using stored handles (UE 5.7: GetActionEventBinding removed)
+	for (const int32& Handle : RecordingBindingHandles)
 	{
-		if (Mapping.InputAction)
-		{
-			Component->RemoveBindingByHandle(Component->GetActionEventBinding(Mapping.InputAction, ETriggerEvent::Triggered));
-			Component->RemoveBindingByHandle(Component->GetActionEventBinding(Mapping.InputAction, ETriggerEvent::Started));
-			Component->RemoveBindingByHandle(Component->GetActionEventBinding(Mapping.InputAction, ETriggerEvent::Completed));
-		}
+		Component->RemoveBindingByHandle(Handle);
 	}
 
 	RecordingBindingHandles.Empty();
