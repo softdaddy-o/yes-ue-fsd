@@ -90,6 +90,8 @@ void UBTTask_AutoDriverBase::HandleTimeout()
 	if (CachedOwnerComp.IsValid())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("AutoDriver BT Task timed out: %s"), *GetNodeName());
-		AbortTask(*CachedOwnerComp.Get(), EBTNodeResult::Failed);
+		// UE 5.7: AbortTask returns result, use nullptr for NodeMemory and call FinishLatentTask
+		EBTNodeResult::Type Result = AbortTask(*CachedOwnerComp.Get(), nullptr);
+		FinishLatentTask(*CachedOwnerComp.Get(), Result);
 	}
 }
